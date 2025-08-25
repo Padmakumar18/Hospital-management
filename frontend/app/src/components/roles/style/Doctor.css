@@ -1,0 +1,12 @@
+.doctor-header {
+  background-color: #4c47f9;
+  color: white;
+  display: flex;
+  justify-content: space-evenly;
+  padding: 1em;
+  font-size: larger;
+}
+
+.appointments-para {
+  font-size: x-large;
+}
