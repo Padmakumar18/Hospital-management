@@ -22,6 +22,12 @@ const PatientCard = ({ patient, onStatusChange }) => {
       <p className="text-gray-600 mb-1">
         <span className="font-medium">Age:</span> {patient.age}
       </p>
+      <p className="text-gray-600 mb-1">
+        <span className="font-medium">Date:</span> {patient.appointmentDate}
+      </p>
+      <p className="text-gray-600 mb-1">
+        <span className="font-medium">Time:</span> {patient.appointmentTime}
+      </p>
       <p className={`font-medium ${statusColor}`}>Status: {patient.status}</p>
 
       {/* Action Buttons (only show if Scheduled) */}
