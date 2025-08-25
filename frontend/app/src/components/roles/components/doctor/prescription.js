@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPrescriptionByPatientId } from "../../mockData/prescription";
+import { getPrescriptionByPatientId } from "../../../mockData/prescription";
 
 const PrescriptionForm = ({ patient, onClose, onSave }) => {
   const [prescriptionData, setPrescriptionData] = useState({
@@ -30,7 +30,6 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Load existing prescription data if patient has completed status
   useEffect(() => {
     if (patient && patient.status === "Completed") {
       const existingPrescription = getPrescriptionByPatientId(patient.id);

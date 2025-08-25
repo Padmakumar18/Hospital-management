@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { appointments as initialAppointments } from "../mockData/appointments";
-import PatientCard from "./components/PatientCard";
-import PrescriptionForm from "./components/prescription";
+import PatientCard from "./components/doctor/PatientCard";
+import PrescriptionForm from "./components/doctor/prescription";
 import { motion, AnimatePresence } from "framer-motion";
-import AgeDistribution from "./components/AgeDistribution";
-import "./style/Doctor.css";
+import AgeDistribution from "./components/doctor/AgeDistribution";
+import "./styles/Doctor.css";
 
 const Doctor = () => {
   const [filter, setFilter] = useState("");

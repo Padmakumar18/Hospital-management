@@ -215,7 +215,6 @@ const Auth = () => {
                   >
                     <option value="">Select your role</option>
                     <option value="Doctor">Doctor</option>
-                    <option value="Nurse">Nurse</option>
                     <option value="Patient">Patient</option>
                     <option value="Pharmacist">Pharmacist</option>
                   </select>
