@@ -69,7 +69,6 @@ const PatientCard = ({ patient, onStatusChange, onPrescribe }) => {
         </div>
       )}
 
-      {/* Show prescription button for completed appointments too */}
       {patient.status === "Completed" && (
         <div className="mt-4">
           <button

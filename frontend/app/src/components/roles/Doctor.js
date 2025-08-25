@@ -34,15 +34,10 @@ const Doctor = () => {
   };
 
   const handleSavePrescription = (prescriptionData) => {
-    // Here you would typically save to a database
     console.log("Prescription saved for patient:", prescriptionData);
-
-    // Show success message (you can implement a toast notification)
     alert(
       `Prescription saved successfully for ${prescriptionData.patientName}!`
     );
-
-    // Close the form
     handleClosePrescription();
   };
 
@@ -163,7 +158,6 @@ const Doctor = () => {
         </div>
       </div>
 
-      {/* Cards */}
       <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6"
         variants={containerVariants}
@@ -188,8 +182,6 @@ const Doctor = () => {
           ))}
         </AnimatePresence>
       </motion.div>
-
-      {/* Prescription Form Modal */}
       <AnimatePresence>
         {showPrescriptionForm && selectedPatient && (
           <PrescriptionForm

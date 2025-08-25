@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPrescriptionByPatientId } from "../../mockData/prescription";
 
 const PrescriptionForm = ({ patient, onClose, onSave }) => {
   const [prescriptionData, setPrescriptionData] = useState({
@@ -27,6 +28,18 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Load existing prescription data if patient has completed status
+  useEffect(() => {
+    if (patient && patient.status === "Completed") {
+      const existingPrescription = getPrescriptionByPatientId(patient.id);
+      if (existingPrescription) {
+        setPrescriptionData(existingPrescription);
+        setIsEditMode(true);
+      }
+    }
+  }, [patient]);
 
   const frequencyOptions = [
     "Once daily",
@@ -208,9 +221,14 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">📋 Prescription Form</h2>
+              <h2 className="text-2xl font-bold">
+                📋 {isEditMode ? "Edit Prescription" : "Prescription Form"}
+              </h2>
               <p className="text-blue-100 mt-1">
-                Create prescription for {patient?.patientName}
+                {isEditMode
+                  ? "View/Edit prescription for"
+                  : "Create prescription for"}{" "}
+                {patient?.patientName}
               </p>
             </div>
             <button
@@ -238,10 +256,24 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Patient Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                👤 Patient Information
-              </h3>
+            <div
+              className={`p-4 rounded-lg ${
+                isEditMode ? "bg-blue-50 border border-blue-200" : "bg-gray-50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  👤 Patient Information
+                </h3>
+                {isEditMode && (
+                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                    📅 Originally prescribed:{" "}
+                    {new Date(
+                      prescriptionData.prescriptionDate
+                    ).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -563,8 +595,6 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                 ))}
               </AnimatePresence>
             </div>
-
-            {/* Additional Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -597,7 +627,6 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-4 pt-6 border-t">
               <button
                 type="button"
@@ -623,7 +652,9 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                     d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                   />
                 </svg>
-                <span>Save Prescription</span>
+                <span>
+                  {isEditMode ? "Update Prescription" : "Save Prescription"}
+                </span>
               </button>
             </div>
           </form>
