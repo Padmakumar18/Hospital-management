@@ -1,20 +1,27 @@
 import React, { useState } from "react";
-import { appointments } from "../mockData/appointments";
+import { appointments as initialAppointments } from "../mockData/appointments";
 import PatientCard from "./components/PatientCard";
 import { motion, AnimatePresence } from "framer-motion";
 import "./style/Doctor.css";
 
 const Doctor = () => {
   const [filter, setFilter] = useState("");
+  const [appointmentData, setAppointmentData] = useState(initialAppointments);
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);
   };
 
+  const handleStatusChange = (id, newStatus) => {
+    setAppointmentData((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+    );
+  };
+
   const filteredAppointments =
     filter === ""
-      ? appointments
-      : appointments.filter((a) => a.status === filter);
+      ? appointmentData
+      : appointmentData.filter((a) => a.status === filter);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -55,24 +62,24 @@ const Doctor = () => {
 
       <div className="appointments p-3">
         <p className="font-bold appointments-para">Appointments</p>
-        <label className="block text-lg font-semibold text-gray-700 mt-3">
-          Filter
-        </label>
-
-        <select
-          name="role"
-          value={filter}
-          onChange={handleInputChange}
-          className="w-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-        >
-          <option value="">All</option>
-          <option value="Completed">Completed</option>
-          <option value="Scheduled">Scheduled</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+        <div>
+          <label className="block text-lg font-semibold text-gray-700 mt-3">
+            Filter
+          </label>
+          <select
+            name="role"
+            value={filter}
+            onChange={handleInputChange}
+            className="w-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+          >
+            <option value="">All</option>
+            <option value="Completed">Completed</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
       </div>
 
-      {/* Animated container */}
       <motion.div
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6"
         variants={containerVariants}
@@ -88,7 +95,10 @@ const Doctor = () => {
               layout
               transition={{ duration: 0.4 }}
             >
-              <PatientCard patient={patient} />
+              <PatientCard
+                patient={patient}
+                onStatusChange={handleStatusChange}
+              />
             </motion.div>
           ))}
         </AnimatePresence>

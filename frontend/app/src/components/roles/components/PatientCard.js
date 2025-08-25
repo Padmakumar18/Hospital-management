@@ -1,13 +1,12 @@
 import React from "react";
 
-const PatientCard = ({ patient }) => {
-  // dynamic color for status
+const PatientCard = ({ patient, onStatusChange }) => {
   const statusColor =
     patient.status === "Cancelled"
       ? "text-red-500"
       : patient.status === "Completed"
       ? "text-green-600"
-      : "text-blue-500"; // Scheduled
+      : "text-blue-500";
 
   return (
     <div className="max-w-sm w-full bg-white shadow-lg rounded-2xl p-5 border border-gray-200 hover:shadow-xl transition-all duration-300">
@@ -24,6 +23,24 @@ const PatientCard = ({ patient }) => {
         <span className="font-medium">Age:</span> {patient.age}
       </p>
       <p className={`font-medium ${statusColor}`}>Status: {patient.status}</p>
+
+      {/* Action Buttons (only show if Scheduled) */}
+      {patient.status === "Scheduled" && (
+        <div className="mt-4 flex space-x-3">
+          <button
+            onClick={() => onStatusChange(patient.id, "Completed")}
+            className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition"
+          >
+            Mark Completed
+          </button>
+          <button
+            onClick={() => onStatusChange(patient.id, "Cancelled")}
+            className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 };
