@@ -8,6 +8,7 @@ const Auth = () => {
     password: "",
     confirmPassword: "",
     fullName: "",
+    role: "",
   });
 
   const handleInputChange = (e) => {
@@ -36,6 +37,7 @@ const Auth = () => {
       password: "",
       confirmPassword: "",
       fullName: "",
+      role: "",
     });
   };
 
@@ -75,7 +77,6 @@ const Auth = () => {
         animate="visible"
         variants={containerVariants}
       >
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 text-center">
           <motion.h1
             className="text-2xl font-bold text-white mb-2"
@@ -97,7 +98,6 @@ const Auth = () => {
           </motion.p>
         </div>
 
-        {/* Form Container */}
         <div className="p-6">
           <AnimatePresence mode="wait">
             <motion.form
@@ -109,7 +109,6 @@ const Auth = () => {
               exit="exit"
               className="space-y-4"
             >
-              {/* Full Name Field (Signup only) */}
               {!isLogin && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -132,7 +131,6 @@ const Auth = () => {
                 </motion.div>
               )}
 
-              {/* Email Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address
@@ -148,7 +146,6 @@ const Auth = () => {
                 />
               </div>
 
-              {/* Password Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -164,7 +161,6 @@ const Auth = () => {
                 />
               </div>
 
-              {/* Confirm Password Field (Signup only) */}
               {!isLogin && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -184,10 +180,25 @@ const Auth = () => {
                     placeholder="Confirm your password"
                     required={!isLogin}
                   />
+                  <label className="block text-sm font-medium text-gray-700 mt-3">
+                    Role
+                  </label>
+                  <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                    required={!isLogin}
+                  >
+                    <option value="">Select your role</option>
+                    <option value="Doctor">Doctor</option>
+                    <option value="Nurse">Nurse</option>
+                    <option value="Patient">Patient</option>
+                    <option value="Pharmacist">Pharmacist</option>
+                  </select>
                 </motion.div>
               )}
 
-              {/* Forgot Password Link (Login only) */}
               {isLogin && (
                 <motion.div
                   className="text-right"
@@ -204,7 +215,6 @@ const Auth = () => {
                 </motion.div>
               )}
 
-              {/* Submit Button */}
               <motion.button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
@@ -217,7 +227,6 @@ const Auth = () => {
             </motion.form>
           </AnimatePresence>
 
-          {/* Toggle Button */}
           <motion.div
             className="mt-6 text-center"
             initial={{ opacity: 0 }}
@@ -238,7 +247,6 @@ const Auth = () => {
           </motion.div>
         </div>
 
-        {/* Footer */}
         <motion.div
           className="bg-gray-50 px-6 py-4 text-center border-t"
           initial={{ opacity: 0 }}
