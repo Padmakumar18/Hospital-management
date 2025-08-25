@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { appointments as initialAppointments } from "../mockData/appointments";
 import PatientCard from "./components/PatientCard";
+import PrescriptionForm from "./components/prescription";
 import { motion, AnimatePresence } from "framer-motion";
-import AgeDistribution from "./components/AgeDistribution"; // import graph
+import AgeDistribution from "./components/AgeDistribution";
 import "./style/Doctor.css";
 
 const Doctor = () => {
   const [filter, setFilter] = useState("");
   const [appointmentData, setAppointmentData] = useState(initialAppointments);
-  const [showGraph, setShowGraph] = useState(false); // toggle table/graph
+  const [showGraph, setShowGraph] = useState(false);
+  const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);
@@ -18,6 +21,29 @@ const Doctor = () => {
     setAppointmentData((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
     );
+  };
+
+  const handlePrescribe = (patient) => {
+    setSelectedPatient(patient);
+    setShowPrescriptionForm(true);
+  };
+
+  const handleClosePrescription = () => {
+    setShowPrescriptionForm(false);
+    setSelectedPatient(null);
+  };
+
+  const handleSavePrescription = (prescriptionData) => {
+    // Here you would typically save to a database
+    console.log("Prescription saved for patient:", prescriptionData);
+
+    // Show success message (you can implement a toast notification)
+    alert(
+      `Prescription saved successfully for ${prescriptionData.patientName}!`
+    );
+
+    // Close the form
+    handleClosePrescription();
   };
 
   const filteredAppointments =
@@ -46,28 +72,31 @@ const Doctor = () => {
 
   return (
     <div className="container-fluid">
-      {/* Header */}
-      <div className="doctor-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-md">
-        <h1 className="text-xl font-bold">
-          Hello, <span className="font-light">User Name</span>
-        </h1>
-        <div className="flex items-center space-x-6 text-sm font-bold">
-          <p className="bg-white text-blue-600 px-3 py-1 rounded-lg shadow-sm">
-            📅 {new Date().toLocaleDateString()}
-          </p>
-          <p className="bg-white text-green-600 px-3 py-1 rounded-lg shadow-sm">
-            ⏰{" "}
-            {new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
+      <div className="doctor-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-lg">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-bold">
+            Hello, <span className="font-light">User Name</span>
+          </h1>
+        </div>
+
+        <div className="text-center flex-1">
+          <h2 className="text-2xl font-extrabold tracking-wide drop-shadow-md">
+            🏥 CityCare Hospital
+          </h2>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <button className="bg-white text-blue-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-blue-100 transition cursor-pointer">
+            Profile
+          </button>
+          <button className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer">
+            Sign out
+          </button>
         </div>
       </div>
 
       <div className="appointments p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Side: Appointments + Filter */}
           <div className="space-y-6">
             <p className="text-2xl font-bold text-gray-800">Appointments</p>
 
@@ -93,7 +122,8 @@ const Doctor = () => {
           <div className="bg-gray-100 p-5 rounded-xl shadow-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-700">
-                📊 This Month's Patient Age Distribution
+                📊 This Month's Patient Age Distribution -{" "}
+                {filter === "" ? "All" : filter}
               </h3>
               <button
                 onClick={() => setShowGraph(!showGraph)}
@@ -104,32 +134,24 @@ const Doctor = () => {
             </div>
 
             {!showGraph ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div className="bg-white rounded-lg shadow p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
+                <div className="bg-white rounded-lg shadow p-2">
                   <p className="text-2xl font-bold text-blue-600">
-                    {
-                      filteredAppointments.filter(
-                        (p) => p.age >= 1 && p.age <= 20
-                      ).length
-                    }
+                    {count0to20}
                   </p>
                   <p className="text-gray-600">Age 1 - 20</p>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-4">
+                <div className="bg-white rounded-lg shadow p-2">
                   <p className="text-2xl font-bold text-green-600">
-                    {
-                      filteredAppointments.filter(
-                        (p) => p.age > 20 && p.age <= 35
-                      ).length
-                    }
+                    {count21to35}
                   </p>
                   <p className="text-gray-600">Age 21 - 35</p>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-4">
+                <div className="bg-white rounded-lg shadow p-2">
                   <p className="text-2xl font-bold text-purple-600">
-                    {filteredAppointments.filter((p) => p.age > 35).length}
+                    {countAbove35}
                   </p>
                   <p className="text-gray-600">Above 35</p>
                 </div>
@@ -160,11 +182,23 @@ const Doctor = () => {
               <PatientCard
                 patient={patient}
                 onStatusChange={handleStatusChange}
+                onPrescribe={handlePrescribe}
               />
             </motion.div>
           ))}
         </AnimatePresence>
       </motion.div>
+
+      {/* Prescription Form Modal */}
+      <AnimatePresence>
+        {showPrescriptionForm && selectedPatient && (
+          <PrescriptionForm
+            patient={selectedPatient}
+            onClose={handleClosePrescription}
+            onSave={handleSavePrescription}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

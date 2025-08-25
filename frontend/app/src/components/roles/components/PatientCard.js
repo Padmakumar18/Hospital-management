@@ -1,6 +1,6 @@
 import React from "react";
 
-const PatientCard = ({ patient, onStatusChange }) => {
+const PatientCard = ({ patient, onStatusChange, onPrescribe }) => {
   const statusColor =
     patient.status === "Cancelled"
       ? "text-red-500"
@@ -30,20 +30,66 @@ const PatientCard = ({ patient, onStatusChange }) => {
       </p>
       <p className={`font-medium ${statusColor}`}>Status: {patient.status}</p>
 
-      {/* Action Buttons (only show if Scheduled) */}
+      {/* Action Buttons */}
       {patient.status === "Scheduled" && (
-        <div className="mt-4 flex space-x-3">
+        <div className="mt-4 space-y-2">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => onStatusChange(patient.id, "Completed")}
+              className="flex-1 bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition text-sm"
+            >
+              Complete
+            </button>
+            <button
+              onClick={() => onStatusChange(patient.id, "Cancelled")}
+              className="flex-1 bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition text-sm"
+            >
+              Cancel
+            </button>
+          </div>
           <button
-            onClick={() => onStatusChange(patient.id, "Completed")}
-            className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition"
+            onClick={() => onPrescribe(patient)}
+            className="w-full bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition flex items-center justify-center space-x-2"
           >
-            Mark Completed
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span>📋 Prescribe</span>
           </button>
+        </div>
+      )}
+
+      {/* Show prescription button for completed appointments too */}
+      {patient.status === "Completed" && (
+        <div className="mt-4">
           <button
-            onClick={() => onStatusChange(patient.id, "Cancelled")}
-            className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition"
+            onClick={() => onPrescribe(patient)}
+            className="w-full bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center space-x-2"
           >
-            Cancel
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span>📋 View/Edit Prescription</span>
           </button>
         </div>
       )}
