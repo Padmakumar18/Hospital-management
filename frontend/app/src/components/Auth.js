@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
@@ -17,6 +19,25 @@ const Auth = () => {
       [e.target.name]: e.target.value,
     });
   };
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("hsp-email-id");
+    const savedPassword = localStorage.getItem("hsp-password");
+
+    if (savedEmail && savedPassword) {
+      navigate("/home"); // auto navigate
+
+      console.log("Auto login with:", {
+        email: savedEmail,
+        password: savedPassword,
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        email: savedEmail,
+        password: savedPassword,
+      }));
+    }
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +49,8 @@ const Auth = () => {
     } else {
       console.log("Signup attempt:", formData);
     }
+    localStorage.setItem("hsp-email-id", formData.email);
+    localStorage.setItem("hsp-password", formData.password);
   };
 
   const toggleMode = () => {
@@ -192,7 +215,6 @@ const Auth = () => {
                   >
                     <option value="">Select your role</option>
                     <option value="Doctor">Doctor</option>
-                    <option value="Nurse">Nurse</option>
                     <option value="Patient">Patient</option>
                     <option value="Pharmacist">Pharmacist</option>
                   </select>
