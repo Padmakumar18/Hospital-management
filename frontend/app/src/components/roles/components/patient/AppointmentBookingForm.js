@@ -165,8 +165,14 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
     const digits = value.replace(/\D/g, "");
 
     if (digits.length <= 10) {
+      return digits;
+    }
+
+    if (digits.length === 10) {
       return `+91 ${digits}`;
-    } else if (digits.length <= 12 && digits.startsWith("91")) {
+    }
+
+    if (digits.length === 12 && digits.startsWith("91")) {
       return `+91 ${digits.slice(2)}`;
     }
 
@@ -437,7 +443,6 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center justify-end space-x-4 pt-6 border-t">
           {onCancel && (
             <button

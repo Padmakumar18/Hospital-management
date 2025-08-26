@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { appointments as initialAppointments } from "../mockData/appointments";
+import { appointments as initialAppointments } from "../mockData/patientAppointments";
 import PatientCard from "./components/doctor/PatientCard";
 import PrescriptionForm from "./components/doctor/prescription";
 import { motion, AnimatePresence } from "framer-motion";

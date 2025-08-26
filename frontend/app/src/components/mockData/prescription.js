@@ -368,11 +368,95 @@ export const prescriptions = [
     prescriptionDate: "2025-08-21",
     createdAt: "2025-08-21T13:20:00Z",
   },
+  {
+    id: 9,
+    patientId: 1,
+    patientName: "John Smith",
+    patientAge: 34,
+    age: 34,
+    gender: "Male",
+    diagnosis: "Allergic Contact Dermatitis",
+    symptoms: "Skin rash on arms and face, itching, mild swelling",
+    medicines: [
+      {
+        id: 1,
+        name: "Cetirizine",
+        type: "Antihistamine",
+        dosage: "10mg",
+        frequency: "Once daily",
+        duration: "7 days",
+        instructions: "Take at bedtime to avoid drowsiness",
+      },
+      {
+        id: 2,
+        name: "Hydrocortisone Cream",
+        type: "Topical Steroid",
+        dosage: "1%",
+        frequency: "Twice daily",
+        duration: "10 days",
+        instructions: "Apply thin layer on affected areas only",
+      },
+    ],
+    instructions:
+      "Avoid contact with known allergens. Use mild, fragrance-free soaps. Keep skin moisturized.",
+    followUp: "Return if symptoms worsen or don't improve in 5 days",
+    date: "2025-08-25",
+    status: "Active",
+    doctorName: "Dr. Rajesh Kumar",
+    doctorSpecialty: "Dermatology",
+    appointmentId: 2,
+    createdAt: "2025-08-25T14:00:00Z",
+  },
+  {
+    id: 10,
+    patientId: 1,
+    patientName: "John Smith",
+    patientAge: 34,
+    age: 34,
+    gender: "Male",
+    diagnosis: "Refractive Error - Myopia",
+    symptoms: "Eye strain, blurred vision, difficulty seeing distant objects",
+    medicines: [
+      {
+        id: 1,
+        name: "Artificial Tears",
+        type: "Eye Drops",
+        dosage: "1-2 drops",
+        frequency: "4 times daily",
+        duration: "2 weeks",
+        instructions: "Use when experiencing eye dryness or strain",
+      },
+      {
+        id: 2,
+        name: "Vitamin A",
+        type: "Supplement",
+        dosage: "5000 IU",
+        frequency: "Once daily",
+        duration: "1 month",
+        instructions: "Take with food to improve absorption",
+      },
+    ],
+    instructions:
+      "Use prescribed glasses regularly. Take frequent breaks from screen time (20-20-20 rule). Ensure proper lighting when reading.",
+    followUp: "Follow-up in 4 weeks to assess improvement",
+    date: "2025-08-10",
+    status: "Active",
+    doctorName: "Dr. Anita Gupta",
+    doctorSpecialty: "Ophthalmology",
+    appointmentId: 7,
+    createdAt: "2025-08-10T13:00:00Z",
+  },
 ];
 
 export const getPrescriptionByPatientId = (patientId) => {
-  return prescriptions.find(
+  return prescriptions.filter(
     (prescription) => prescription.patientId === patientId
+  );
+};
+
+export const getPrescriptionByPatientName = (patientName) => {
+  return prescriptions.filter(
+    (prescription) => prescription.patientName === patientName
   );
 };
 
