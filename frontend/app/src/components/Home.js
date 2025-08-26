@@ -8,8 +8,8 @@ const Home = () => {
     <div className="container-fluid">
       <div className="home-header">
         {/* <Doctor /> */}
-        <Patient />
-        {/* <Pharmacist /> */}
+        {/* <Patient /> */}
+        <Pharmacist />
         {/* <Admin />  */}
       </div>
     </div>
