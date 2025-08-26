@@ -22,6 +22,13 @@ const PatientCard = ({ patient, onStatusChange, onPrescribe }) => {
       <p className="text-gray-600 mb-1">
         <span className="font-medium">Age:</span> {patient.age}
       </p>
+
+      {/* ✅ New field added here */}
+      <p className="text-gray-600 mb-1">
+        <span className="font-medium">Issue Duration:</span> {patient.issueDays}{" "}
+        days
+      </p>
+
       <p className="text-gray-600 mb-1">
         <span className="font-medium">Date:</span> {patient.appointmentDate}
       </p>

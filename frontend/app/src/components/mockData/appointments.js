@@ -11,6 +11,7 @@ export const appointments = [
     appointmentTime: "10:30 AM",
     status: "Scheduled",
     reason: "Chest pain and shortness of breath",
+    issueDays: 5, // Number of days issue persists
   },
   {
     id: 2,
@@ -24,6 +25,7 @@ export const appointments = [
     appointmentTime: "11:00 AM",
     status: "Completed",
     reason: "Skin allergy and itching",
+    issueDays: 10,
   },
   {
     id: 3,
@@ -37,6 +39,7 @@ export const appointments = [
     appointmentTime: "09:45 AM",
     status: "Cancelled",
     reason: "Frequent headaches and dizziness",
+    issueDays: 20,
   },
   {
     id: 4,
@@ -50,6 +53,7 @@ export const appointments = [
     appointmentTime: "02:15 PM",
     status: "Scheduled",
     reason: "Knee pain after injury",
+    issueDays: 7,
   },
   {
     id: 5,
@@ -63,5 +67,6 @@ export const appointments = [
     appointmentTime: "04:00 PM",
     status: "Scheduled",
     reason: "Routine health checkup and blood test",
+    issueDays: 1,
   },
 ];
