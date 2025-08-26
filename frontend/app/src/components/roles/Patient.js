@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
 import AppointmentBookingForm from "./components/patient/AppointmentBookingForm";
 import PrescriptionView from "./components/patient/PrescriptionView";
 import {
@@ -14,7 +15,6 @@ import "./styles/Patient.css";
 const Patient = () => {
   const [appointments, setAppointments] = useState([]);
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [stats, setStats] = useState({});
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -30,15 +30,15 @@ const Patient = () => {
 
   const handleBookAppointment = (appointmentData) => {
     setAppointments((prev) => [...prev, appointmentData]);
-    setSuccessMessage(
-      `Appointment booked successfully for ${appointmentData.appointmentDate} at ${appointmentData.appointmentTime}`
+    toast.success(
+      `Appointment booked successfully for ${appointmentData.appointmentDate} at ${appointmentData.appointmentTime}`,
+      {
+        duration: 4000,
+        position: "top-center",
+      }
     );
 
     setShowBookingForm(false);
-
-    setTimeout(() => {
-      setSuccessMessage("");
-    }, 5000);
   };
 
   const handleCancelBooking = () => {
@@ -84,42 +84,54 @@ const Patient = () => {
 
   // Handle appointment cancellation
   const handleCancelAppointment = (appointmentId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this appointment?"
+    toast(
+      (t) => (
+        <div className="flex flex-col space-y-3">
+          <p className="font-medium text-gray-800">
+            Are you sure you want to cancel this appointment?
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                setAppointments((prev) =>
+                  prev.map((apt) =>
+                    apt.id === appointmentId
+                      ? {
+                          ...apt,
+                          status: "Cancelled",
+                          cancellationReason: "Cancelled by patient",
+                        }
+                      : apt
+                  )
+                );
+
+                const newStats = getPatientStats("John Smith");
+                setStats(newStats);
+
+                toast.dismiss(t.id);
+                toast.success("Appointment cancelled successfully", {
+                  duration: 3000,
+                  position: "top-center",
+                });
+              }}
+              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+            >
+              Yes, Cancel
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-400 transition-colors"
+            >
+              No, Keep
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+        position: "top-center",
+      }
     );
-
-    if (confirmed) {
-      setAppointments((prev) =>
-        prev.map((apt) =>
-          apt.id === appointmentId
-            ? {
-                ...apt,
-                status: "Cancelled",
-                cancellationReason: "Cancelled by patient",
-              }
-            : apt
-        )
-      );
-
-      // Update stats
-      const updatedAppointments = appointments.map((apt) =>
-        apt.id === appointmentId
-          ? {
-              ...apt,
-              status: "Cancelled",
-              cancellationReason: "Cancelled by patient",
-            }
-          : apt
-      );
-
-      const newStats = getPatientStats("John Smith");
-      setStats(newStats);
-
-      setSuccessMessage("Appointment cancelled successfully");
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-    }
   };
 
   // Handle view prescription
@@ -143,7 +155,10 @@ const Patient = () => {
       setShowPrescriptionModal(true);
     } else {
       // Show a message if no prescription is found
-      alert("No prescription found for this appointment.");
+      toast.error("No prescription found for this appointment.", {
+        duration: 3000,
+        position: "top-center",
+      });
     }
   };
 
@@ -155,6 +170,7 @@ const Patient = () => {
 
   return (
     <div className="container-fluid min-h-screen bg-gray-50">
+      <Toaster />
       <div className="patient-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-lg">
         <div className="flex items-center space-x-3">
           <h1 className="text-xl font-bold">
@@ -179,32 +195,6 @@ const Patient = () => {
       </div>
 
       <div className="p-6">
-        <AnimatePresence>
-          {successMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              {successMessage}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">

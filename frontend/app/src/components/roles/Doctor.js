@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { appointments as initialAppointments } from "../mockData/patientAppointments";
 import PatientCard from "./components/doctor/PatientCard";
 import PrescriptionForm from "./components/doctor/prescription";
@@ -35,8 +36,12 @@ const Doctor = () => {
 
   const handleSavePrescription = (prescriptionData) => {
     console.log("Prescription saved for patient:", prescriptionData);
-    alert(
-      `Prescription saved successfully for ${prescriptionData.patientName}!`
+    toast.success(
+      `Prescription saved successfully for ${prescriptionData.patientName}!`,
+      {
+        duration: 4000,
+        position: "top-center",
+      }
     );
     handleClosePrescription();
   };
@@ -67,6 +72,7 @@ const Doctor = () => {
 
   return (
     <div className="container-fluid">
+      <Toaster />
       <div className="doctor-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-lg">
         <div className="flex items-center space-x-3">
           <h1 className="text-xl font-bold">

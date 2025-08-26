@@ -8,9 +8,9 @@ const Home = () => {
     <div className="container-fluid">
       <div className="home-header">
         {/* <Doctor /> */}
-        <Patient />
+        {/* <Patient /> */}
         {/* <Pharmacist /> */}
-        {/* <Admin />  */}
+        <Admin />
       </div>
     </div>
   );
