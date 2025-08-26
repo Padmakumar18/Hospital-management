@@ -9,8 +9,8 @@ const Home = () => {
       <div className="home-header">
         {/* <Doctor /> */}
         {/* <Patient /> */}
-        <Pharmacist />
-        {/* <Admin />  */}
+        {/* <Pharmacist /> */}
+        <Admin />
       </div>
     </div>
   );
