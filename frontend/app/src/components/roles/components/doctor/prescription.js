@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPrescriptionByPatientId } from "../../../mockData/prescription";
+import { getPrescriptionByPatientId } from "../../../mockData/Prescription";
 
 const PrescriptionForm = ({ patient, onClose, onSave }) => {
   const [prescriptionData, setPrescriptionData] = useState({

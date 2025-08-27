@@ -7,10 +7,10 @@ const Home = () => {
   return (
     <div className="container-fluid">
       <div className="home-header">
-        {/* <Doctor /> */}
+        <Doctor />
         {/* <Patient /> */}
         {/* <Pharmacist /> */}
-        <Admin />
+        {/* <Admin /> */}
       </div>
     </div>
   );

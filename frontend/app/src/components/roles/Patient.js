@@ -8,8 +8,8 @@ import {
   getUpcomingAppointments,
   getPastAppointments,
   getPatientStats,
-} from "../mockData/appointments";
-import { getPrescriptionByPatientName } from "../mockData/prescription";
+} from "../mockData/patient/Appointments";
+import { getPrescriptionByPatientName } from "../mockData/Prescription";
 import "./styles/Patient.css";
 
 const Patient = () => {

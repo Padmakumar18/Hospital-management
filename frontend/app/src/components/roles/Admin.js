@@ -10,7 +10,7 @@ import {
   getUsersByRole,
   getDepartmentStats,
   getUserStats,
-} from "../mockData/adminMockdata";
+} from "../mockData/admin/AdminMockdata";
 
 const Admin = () => {
   const [users, setUsers] = useState(initialUsers);

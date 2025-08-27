@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { appointments as initialAppointments } from "../mockData/patientAppointments";
-import PatientCard from "./components/doctor/PatientCard";
-import PrescriptionForm from "./components/doctor/prescription";
+
+import { appointments as initialAppointments } from "../mockData/doctor/PatientAppointments";
+
+import PatientCard from "./components/doctor/PatientCard"; // Cards ( patient details )
+import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient
+import AgeDistribution from "./components/doctor/AgeDistribution"; // This is for graph
+
 import { motion, AnimatePresence } from "framer-motion";
-import AgeDistribution from "./components/doctor/AgeDistribution";
+
 import "./styles/Doctor.css";
 
 const Doctor = () => {
