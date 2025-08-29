@@ -29,6 +29,8 @@ const Doctor = () => {
   };
 
   const handlePrescribe = (patient) => {
+    // console.log("patient");
+    // console.log(patient);
     setSelectedPatient(patient);
     setShowPrescriptionForm(true);
   };

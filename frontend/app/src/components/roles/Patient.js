@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import AppointmentBookingForm from "./components/patient/AppointmentBookingForm";
 import PrescriptionView from "./components/patient/PrescriptionView";
+import Loading, { LoadingOverlay, SearchLoading, useLoading } from "../Loading";
 import {
   getPatientAppointments,
   getUpcomingAppointments,
@@ -20,12 +21,24 @@ const Patient = () => {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [selectedPrescription, setSelectedPrescription] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { loading: prescriptionLoading, withLoading } = useLoading();
 
   useEffect(() => {
-    const mockAppointments = getPatientAppointments("John Smith");
-    const patientStats = getPatientStats("John Smith");
-    setAppointments(mockAppointments);
-    setStats(patientStats);
+    const loadData = async () => {
+      setIsLoading(true);
+      // Simulate API loading time
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const mockAppointments = getPatientAppointments("John Smith");
+      const patientStats = getPatientStats("John Smith");
+      setAppointments(mockAppointments);
+      setStats(patientStats);
+      setIsLoading(false);
+    };
+
+    loadData();
   }, []);
 
   const handleBookAppointment = (appointmentData) => {
@@ -136,30 +149,36 @@ const Patient = () => {
 
   // Handle view prescription
   const handleViewPrescription = (appointment) => {
-    // Get the prescription data for this appointment
-    const prescriptionData = getPrescriptionByPatientName(
-      appointment.patientName || "John Smith"
-    );
-    if (prescriptionData && prescriptionData.length > 0) {
-      // Find the prescription that matches this appointment or get the most recent one
-      const matchingPrescription =
-        prescriptionData.find(
-          (p) =>
-            p.appointmentId === appointment.id ||
-            new Date(p.date).toDateString() ===
-              new Date(appointment.appointmentDate).toDateString()
-        ) || prescriptionData[0]; // Fallback to first prescription if no exact match
+    withLoading(async () => {
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      setSelectedPrescription(matchingPrescription);
-      setSelectedAppointment(appointment);
-      setShowPrescriptionModal(true);
-    } else {
-      // Show a message if no prescription is found
-      toast.error("No prescription found for this appointment.", {
-        duration: 3000,
-        position: "top-center",
-      });
-    }
+      // Get the prescription data for this appointment
+      const prescriptionData = getPrescriptionByPatientName(
+        appointment.patientName || "John Smith"
+      );
+
+      if (prescriptionData && prescriptionData.length > 0) {
+        // Find the prescription that matches this appointment or get the most recent one
+        const matchingPrescription =
+          prescriptionData.find(
+            (p) =>
+              p.appointmentId === appointment.id ||
+              new Date(p.date).toDateString() ===
+                new Date(appointment.appointmentDate).toDateString()
+          ) || prescriptionData[0]; // Fallback to first prescription if no exact match
+
+        setSelectedPrescription(matchingPrescription);
+        setSelectedAppointment(appointment);
+        setShowPrescriptionModal(true);
+      } else {
+        // Show a message if no prescription is found
+        toast.error("No prescription found for this appointment.", {
+          duration: 3000,
+          position: "top-center",
+        });
+      }
+    });
   };
 
   const handleClosePrescription = () => {
@@ -167,6 +186,18 @@ const Patient = () => {
     setSelectedAppointment(null);
     setSelectedPrescription(null);
   };
+
+  // Show loading screen while data is loading
+  if (isLoading) {
+    return (
+      <Loading
+        type="medical"
+        message="Loading your appointments..."
+        fullScreen={true}
+        size="xl"
+      />
+    );
+  }
 
   return (
     <div className="container-fluid min-h-screen bg-gray-50">

@@ -382,7 +382,6 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   <span>Add Medicine</span>
                 </button>
               </div>
-
               <AnimatePresence>
                 {prescriptionData.medicines.map((medicine, index) => (
                   <motion.div
