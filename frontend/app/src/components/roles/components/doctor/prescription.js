@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getPrescriptionByPatientId } from "../../../mockData/Prescription";
 
 const PrescriptionForm = ({ patient, onClose, onSave }) => {
-  console.log("patient");
-  console.log(patient);
+  // console.log("patient");
+  // console.log(patient);
   const [prescriptionData, setPrescriptionData] = useState({
     patientId: patient?.id || "",
     patientName: patient?.patientName || "",
@@ -35,8 +35,8 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
   useEffect(() => {
     if (patient && patient.status === "Completed") {
       const existingPrescriptions = getPrescriptionByPatientId(patient.id);
-      console.log("existingPrescriptions");
-      console.log(existingPrescriptions);
+      // console.log("existingPrescriptions");
+      // console.log(existingPrescriptions);
       if (existingPrescriptions && existingPrescriptions.length > 0) {
         // Get the most recent prescription (first one in the array)
         const existingPrescription = existingPrescriptions[0];
@@ -77,8 +77,8 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
             })) || [],
         };
 
-        console.log("sanitizedPrescription");
-        console.log(sanitizedPrescription);
+        // console.log("sanitizedPrescription");
+        // console.log(sanitizedPrescription);
         setPrescriptionData(sanitizedPrescription);
         setIsEditMode(true);
       }

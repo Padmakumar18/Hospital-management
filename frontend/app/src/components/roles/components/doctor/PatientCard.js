@@ -41,12 +41,12 @@ const PatientCard = ({ patient, onStatusChange, onPrescribe }) => {
       {patient.status === "Scheduled" && (
         <div className="mt-4 space-y-2">
           <div className="flex space-x-2">
-            <button
+            {/* <button
               onClick={() => onStatusChange(patient.id, "Completed")}
               className="flex-1 bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition text-sm"
             >
               Complete
-            </button>
+            </button> */}
             <button
               onClick={() => onStatusChange(patient.id, "Cancelled")}
               className="flex-1 bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition text-sm"
