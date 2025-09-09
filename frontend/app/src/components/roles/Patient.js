@@ -25,14 +25,15 @@ const Patient = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { loading: prescriptionLoading, withLoading } = useLoading();
 
+  // Need to write a function to get a user details using mail , pass
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      // Simulate API loading time
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
       const mockAppointments = getPatientAppointments("John Smith");
       const patientStats = getPatientStats("John Smith");
+      console.log("patientStats");
+      console.log(patientStats);
       setAppointments(mockAppointments);
       setStats(patientStats);
       setIsLoading(false);
@@ -50,7 +51,6 @@ const Patient = () => {
         position: "top-center",
       }
     );
-
     setShowBookingForm(false);
   };
 
@@ -202,28 +202,6 @@ const Patient = () => {
   return (
     <div className="container-fluid min-h-screen bg-gray-50">
       <Toaster />
-      <div className="patient-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-bold">
-            Hello, <span className="font-light">User Name</span>
-          </h1>
-        </div>
-
-        <div className="text-center flex-1">
-          <h2 className="text-2xl font-extrabold tracking-wide drop-shadow-md">
-            🏥 CityCare Hospital
-          </h2>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="bg-white text-blue-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-blue-100 transition cursor-pointer">
-            Profile
-          </button>
-          <button className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer">
-            Sign out
-          </button>
-        </div>
-      </div>
 
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">

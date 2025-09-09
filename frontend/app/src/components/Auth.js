@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import axios from "axios";
 
 const Auth = () => {
+  const API_URL = "http://localhost:8080/api";
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -19,6 +23,37 @@ const Auth = () => {
       [e.target.name]: e.target.value,
     });
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isLogin) {
+      try {
+        const response = await axios.post(`${API_URL}/auth/login`, {
+          email: formData.email,
+          password: formData.password,
+        });
+        const result = response.data;
+        console.log("Login response:", result);
+
+        if (result.success) {
+          toast.success("Login successful!");
+          navigate("/home");
+          localStorage.setItem("hsp-email-id", formData.email);
+          localStorage.setItem("hsp-password", formData.password);
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        toast.error("Login failed. Please try again.");
+      }
+      console.log("Login attempt:", {
+        email: formData.email,
+        password: formData.password,
+      });
+    } else {
+      console.log("Signup attempt:", formData);
+    }
+  };
+
   useEffect(() => {
     const savedEmail = localStorage.getItem("hsp-email-id");
     const savedPassword = localStorage.getItem("hsp-password");
@@ -38,20 +73,6 @@ const Auth = () => {
       }));
     }
   }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isLogin) {
-      console.log("Login attempt:", {
-        email: formData.email,
-        password: formData.password,
-      });
-    } else {
-      console.log("Signup attempt:", formData);
-    }
-    localStorage.setItem("hsp-email-id", formData.email);
-    localStorage.setItem("hsp-password", formData.password);
-  };
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
