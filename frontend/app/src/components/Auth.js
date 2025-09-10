@@ -42,7 +42,7 @@ const Auth = () => {
           localStorage.setItem("hsp-email-id", formData.email);
           localStorage.setItem("hsp-password", formData.password);
 
-          navigate("/home");
+          // navigate("/home");
         }
       } catch (error) {
         console.error("Login error:", error);
@@ -65,15 +65,15 @@ const Auth = () => {
         console.log("Signup response:", result);
 
         if (result.success) {
-          toast.success("Singup successful! Please log in");
+          toast.success("Singup successful !");
           localStorage.setItem("hsp-email-id", formData.email);
           localStorage.setItem("hsp-password", formData.password);
 
-          // navigate("/login");
+          // navigate("/home");
         }
       } catch (error) {
         console.error("Login error:", error);
-        toast.error("Login failed. Please try again.");
+        toast.error("Signup failed. Please try again.");
       }
     }
   };
@@ -236,18 +236,6 @@ const Auth = () => {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
                 >
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-                    placeholder="Confirm your password"
-                    required={!isLogin}
-                  />
                   <label className="block text-sm font-medium text-gray-700 mt-3">
                     Role
                   </label>

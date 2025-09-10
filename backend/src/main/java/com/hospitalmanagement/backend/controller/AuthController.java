@@ -4,9 +4,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.hospitalmanagement.backend.service.UserService;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+    private final UserService userService;
+
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
 
     // Simple login request DTO
     static class LoginRequest {
@@ -44,14 +51,25 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<SignupResponse> signup(@RequestBody SignupRequest signupRequest) {
-        System.out.println(signupRequest.name);
-        System.out.println(signupRequest.email);
-        System.out.println(signupRequest.password);
-        System.out.println(signupRequest.role);
+        try {
+            User user = new User();
+            user.setName(signupRequest.name);
+            user.setEmail(signupRequest.email);
+            user.setPassword(signupRequest.password);
+            user.setRole(signupRequest.role);
+            // role can be saved if you add a column in User entity
 
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(new SignupResponse(true, "Account created successfully!"));
+            userService.createUser(user);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new SignupResponse(true, "Account created successfully!"));
+
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new SignupResponse(false, e.getMessage()));
+        }
     }
 
     @PostMapping("/login")

@@ -1,0 +1,11 @@
+package com.hospitalmanagement.backend.repository;
+
+import com.hospitalmanagement.backend.controller.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    // Optional: method to find by email
+    User findByEmail(String email);
+}
