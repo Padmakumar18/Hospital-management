@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     // Simple login request DTO
@@ -23,6 +23,35 @@ public class AuthController {
             this.success = success;
             this.message = message;
         }
+    }
+
+    static class SignupRequest {
+        public String email;
+        public String password;
+        public String name;
+        public String role;
+    }
+
+    static class SignupResponse {
+        public boolean success;
+        public String message;
+
+        public SignupResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<SignupResponse> signup(@RequestBody SignupRequest signupRequest) {
+        System.out.println(signupRequest.name);
+        System.out.println(signupRequest.email);
+        System.out.println(signupRequest.password);
+        System.out.println(signupRequest.role);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new SignupResponse(true, "Account created successfully!"));
     }
 
     @PostMapping("/login")

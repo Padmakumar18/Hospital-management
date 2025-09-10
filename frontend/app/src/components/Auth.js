@@ -6,7 +6,9 @@ import toast from "react-hot-toast";
 import axios from "axios";
 
 const Auth = () => {
-  const API_URL = "http://localhost:8080/api";
+  // const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = "http://localhost:8080";
+
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -37,9 +39,10 @@ const Auth = () => {
 
         if (result.success) {
           toast.success("Login successful!");
-          navigate("/home");
           localStorage.setItem("hsp-email-id", formData.email);
           localStorage.setItem("hsp-password", formData.password);
+
+          navigate("/home");
         }
       } catch (error) {
         console.error("Login error:", error);
@@ -51,6 +54,27 @@ const Auth = () => {
       });
     } else {
       console.log("Signup attempt:", formData);
+      try {
+        const response = await axios.post(`${API_URL}/auth/signup`, {
+          email: formData.email,
+          password: formData.password,
+          name: formData.fullName,
+          role: formData.role,
+        });
+        const result = response.data;
+        console.log("Signup response:", result);
+
+        if (result.success) {
+          toast.success("Singup successful! Please log in");
+          localStorage.setItem("hsp-email-id", formData.email);
+          localStorage.setItem("hsp-password", formData.password);
+
+          // navigate("/login");
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        toast.error("Login failed. Please try again.");
+      }
     }
   };
 
