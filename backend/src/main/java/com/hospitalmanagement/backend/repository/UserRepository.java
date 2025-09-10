@@ -1,6 +1,6 @@
 package com.hospitalmanagement.backend.repository;
 
-import com.hospitalmanagement.backend.controller.User;
+import com.hospitalmanagement.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

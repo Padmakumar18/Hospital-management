@@ -1,6 +1,6 @@
 package com.hospitalmanagement.backend.service;
 
-import com.hospitalmanagement.backend.controller.User;
+import com.hospitalmanagement.backend.model.User;
 import com.hospitalmanagement.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
