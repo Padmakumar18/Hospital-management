@@ -472,3 +472,51 @@ export const getPrescriptionsByDateRange = (startDate, endDate) => {
     return prescDate >= new Date(startDate) && prescDate <= new Date(endDate);
   });
 };
+
+// Add new prescription
+export const addPrescription = (prescriptionData) => {
+  const newPrescription = {
+    ...prescriptionData,
+    id: prescriptions.length + 1,
+    createdAt: new Date().toISOString(),
+  };
+  prescriptions.push(newPrescription);
+  return newPrescription;
+};
+
+// Update existing prescription
+export const updatePrescription = (prescriptionId, updatedData) => {
+  const index = prescriptions.findIndex((p) => p.id === prescriptionId);
+  if (index !== -1) {
+    prescriptions[index] = {
+      ...prescriptions[index],
+      ...updatedData,
+      id: prescriptionId, // Ensure ID doesn't change
+    };
+    return prescriptions[index];
+  }
+  return null;
+};
+
+// Update prescription by patient ID (for the most recent one)
+export const updatePrescriptionByPatientId = (patientId, updatedData) => {
+  const patientPrescriptions = prescriptions.filter(
+    (p) => p.patientId === patientId
+  );
+  if (patientPrescriptions.length > 0) {
+    // Update the most recent prescription (first one in the array)
+    const mostRecent = patientPrescriptions[0];
+    return updatePrescription(mostRecent.id, updatedData);
+  }
+  return null;
+};
+
+// Delete prescription
+export const deletePrescription = (prescriptionId) => {
+  const index = prescriptions.findIndex((p) => p.id === prescriptionId);
+  if (index !== -1) {
+    const deleted = prescriptions.splice(index, 1)[0];
+    return deleted;
+  }
+  return null;
+};

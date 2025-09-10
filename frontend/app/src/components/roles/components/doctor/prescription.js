@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPrescriptionByPatientId } from "../../../mockData/prescription";
+import { getPrescriptionByPatientId } from "../../../mockData/Prescription";
 
 const PrescriptionForm = ({ patient, onClose, onSave }) => {
+  // console.log("patient");
+  // console.log(patient);
   const [prescriptionData, setPrescriptionData] = useState({
     patientId: patient?.id || "",
     patientName: patient?.patientName || "",
@@ -32,9 +34,52 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
 
   useEffect(() => {
     if (patient && patient.status === "Completed") {
-      const existingPrescription = getPrescriptionByPatientId(patient.id);
-      if (existingPrescription) {
-        setPrescriptionData(existingPrescription);
+      const existingPrescriptions = getPrescriptionByPatientId(patient.id);
+      // console.log("existingPrescriptions");
+      // console.log(existingPrescriptions);
+      if (existingPrescriptions && existingPrescriptions.length > 0) {
+        // Get the most recent prescription (first one in the array)
+        const existingPrescription = existingPrescriptions[0];
+
+        // Handle both old and new data structures
+        const sanitizedPrescription = {
+          patientId: existingPrescription.patientId || "",
+          patientName: existingPrescription.patientName || "",
+          age: existingPrescription.age || "",
+          gender: existingPrescription.gender || "",
+          diagnosis: existingPrescription.diagnosis || "",
+          symptoms: existingPrescription.symptoms || "",
+          // Handle both additionalNotes (new) and instructions (old)
+          additionalNotes:
+            existingPrescription.additionalNotes ||
+            existingPrescription.instructions ||
+            "",
+          // Handle both followUpDate (new) and followUp (old)
+          followUpDate:
+            existingPrescription.followUpDate ||
+            existingPrescription.followUp ||
+            "",
+          doctorName: existingPrescription.doctorName || "Dr. [Doctor Name]",
+          prescriptionDate:
+            existingPrescription.prescriptionDate ||
+            existingPrescription.date ||
+            new Date().toISOString().split("T")[0],
+          medicines:
+            existingPrescription.medicines?.map((medicine) => ({
+              id: medicine.id || 1,
+              // Handle both medicineName (new) and name (old)
+              medicineName: medicine.medicineName || medicine.name || "",
+              dosage: medicine.dosage || "",
+              frequency: medicine.frequency || "",
+              duration: medicine.duration || "",
+              instructions: medicine.instructions || "",
+              quantity: medicine.quantity || "",
+            })) || [],
+        };
+
+        // console.log("sanitizedPrescription");
+        // console.log(sanitizedPrescription);
+        setPrescriptionData(sanitizedPrescription);
         setIsEditMode(true);
       }
     }
@@ -280,7 +325,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   </label>
                   <input
                     type="text"
-                    value={prescriptionData.patientName}
+                    value={prescriptionData.patientName || ""}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                     readOnly
                   />
@@ -291,7 +336,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   </label>
                   <input
                     type="text"
-                    value={prescriptionData.age}
+                    value={prescriptionData.age || ""}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                     readOnly
                   />
@@ -302,7 +347,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   </label>
                   <input
                     type="text"
-                    value={prescriptionData.gender}
+                    value={prescriptionData.gender || ""}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                     readOnly
                   />
@@ -317,7 +362,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   🩺 Diagnosis *
                 </label>
                 <textarea
-                  value={prescriptionData.diagnosis}
+                  value={prescriptionData.diagnosis || ""}
                   onChange={(e) =>
                     handleInputChange("diagnosis", e.target.value)
                   }
@@ -339,7 +384,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   🤒 Symptoms *
                 </label>
                 <textarea
-                  value={prescriptionData.symptoms}
+                  value={prescriptionData.symptoms || ""}
                   onChange={(e) =>
                     handleInputChange("symptoms", e.target.value)
                   }
@@ -382,7 +427,6 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   <span>Add Medicine</span>
                 </button>
               </div>
-
               <AnimatePresence>
                 {prescriptionData.medicines.map((medicine, index) => (
                   <motion.div
@@ -427,7 +471,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                         </label>
                         <input
                           type="text"
-                          value={medicine.medicineName}
+                          value={medicine.medicineName || ""}
                           onChange={(e) =>
                             handleMedicineChange(
                               index,
@@ -455,7 +499,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                         </label>
                         <input
                           type="text"
-                          value={medicine.dosage}
+                          value={medicine.dosage || ""}
                           onChange={(e) =>
                             handleMedicineChange(
                               index,
@@ -483,7 +527,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                         </label>
                         <input
                           type="text"
-                          value={medicine.quantity}
+                          value={medicine.quantity || ""}
                           onChange={(e) =>
                             handleMedicineChange(
                               index,
@@ -510,7 +554,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                           Frequency *
                         </label>
                         <select
-                          value={medicine.frequency}
+                          value={medicine.frequency || ""}
                           onChange={(e) =>
                             handleMedicineChange(
                               index,
@@ -543,7 +587,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                           Duration *
                         </label>
                         <select
-                          value={medicine.duration}
+                          value={medicine.duration || ""}
                           onChange={(e) =>
                             handleMedicineChange(
                               index,
@@ -577,7 +621,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                         </label>
                         <input
                           type="text"
-                          value={medicine.instructions}
+                          value={medicine.instructions || ""}
                           onChange={(e) =>
                             handleMedicineChange(
                               index,
@@ -600,7 +644,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                   📝 Additional Notes
                 </label>
                 <textarea
-                  value={prescriptionData.additionalNotes}
+                  value={prescriptionData.additionalNotes || ""}
                   onChange={(e) =>
                     handleInputChange("additionalNotes", e.target.value)
                   }
@@ -616,7 +660,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
                 </label>
                 <input
                   type="date"
-                  value={prescriptionData.followUpDate}
+                  value={prescriptionData.followUpDate || ""}
                   onChange={(e) =>
                     handleInputChange("followUpDate", e.target.value)
                   }

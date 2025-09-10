@@ -4,7 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import {
   pharmacyPatients,
   getPharmacyStats,
-} from "../mockData/pharmacistMockdata";
+} from "../mockData/pharmacist/PharmacistMockdata";
 
 const Pharmacist = () => {
   const [patients, setPatients] = useState(pharmacyPatients);

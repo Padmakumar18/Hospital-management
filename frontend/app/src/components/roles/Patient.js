@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import AppointmentBookingForm from "./components/patient/AppointmentBookingForm";
 import PrescriptionView from "./components/patient/PrescriptionView";
+import Loading, { LoadingOverlay, SearchLoading, useLoading } from "../Loading";
 import {
   getPatientAppointments,
   getUpcomingAppointments,
   getPastAppointments,
   getPatientStats,
-} from "../mockData/appointments";
-import { getPrescriptionByPatientName } from "../mockData/prescription";
+} from "../mockData/patient/Appointments";
+import { getPrescriptionByPatientName } from "../mockData/Prescription";
 import "./styles/Patient.css";
 
 const Patient = () => {
@@ -20,12 +21,25 @@ const Patient = () => {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [selectedPrescription, setSelectedPrescription] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { loading: prescriptionLoading, withLoading } = useLoading();
 
+  // Need to write a function to get a user details using mail , pass
   useEffect(() => {
-    const mockAppointments = getPatientAppointments("John Smith");
-    const patientStats = getPatientStats("John Smith");
-    setAppointments(mockAppointments);
-    setStats(patientStats);
+    const loadData = async () => {
+      setIsLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const mockAppointments = getPatientAppointments("John Smith");
+      const patientStats = getPatientStats("John Smith");
+      console.log("patientStats");
+      console.log(patientStats);
+      setAppointments(mockAppointments);
+      setStats(patientStats);
+      setIsLoading(false);
+    };
+
+    loadData();
   }, []);
 
   const handleBookAppointment = (appointmentData) => {
@@ -37,7 +51,6 @@ const Patient = () => {
         position: "top-center",
       }
     );
-
     setShowBookingForm(false);
   };
 
@@ -136,30 +149,36 @@ const Patient = () => {
 
   // Handle view prescription
   const handleViewPrescription = (appointment) => {
-    // Get the prescription data for this appointment
-    const prescriptionData = getPrescriptionByPatientName(
-      appointment.patientName || "John Smith"
-    );
-    if (prescriptionData && prescriptionData.length > 0) {
-      // Find the prescription that matches this appointment or get the most recent one
-      const matchingPrescription =
-        prescriptionData.find(
-          (p) =>
-            p.appointmentId === appointment.id ||
-            new Date(p.date).toDateString() ===
-              new Date(appointment.appointmentDate).toDateString()
-        ) || prescriptionData[0]; // Fallback to first prescription if no exact match
+    withLoading(async () => {
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      setSelectedPrescription(matchingPrescription);
-      setSelectedAppointment(appointment);
-      setShowPrescriptionModal(true);
-    } else {
-      // Show a message if no prescription is found
-      toast.error("No prescription found for this appointment.", {
-        duration: 3000,
-        position: "top-center",
-      });
-    }
+      // Get the prescription data for this appointment
+      const prescriptionData = getPrescriptionByPatientName(
+        appointment.patientName || "John Smith"
+      );
+
+      if (prescriptionData && prescriptionData.length > 0) {
+        // Find the prescription that matches this appointment or get the most recent one
+        const matchingPrescription =
+          prescriptionData.find(
+            (p) =>
+              p.appointmentId === appointment.id ||
+              new Date(p.date).toDateString() ===
+                new Date(appointment.appointmentDate).toDateString()
+          ) || prescriptionData[0]; // Fallback to first prescription if no exact match
+
+        setSelectedPrescription(matchingPrescription);
+        setSelectedAppointment(appointment);
+        setShowPrescriptionModal(true);
+      } else {
+        // Show a message if no prescription is found
+        toast.error("No prescription found for this appointment.", {
+          duration: 3000,
+          position: "top-center",
+        });
+      }
+    });
   };
 
   const handleClosePrescription = () => {
@@ -168,31 +187,21 @@ const Patient = () => {
     setSelectedPrescription(null);
   };
 
+  // Show loading screen while data is loading
+  if (isLoading) {
+    return (
+      <Loading
+        type="medical"
+        message="Loading your appointments..."
+        fullScreen={true}
+        size="xl"
+      />
+    );
+  }
+
   return (
     <div className="container-fluid min-h-screen bg-gray-50">
       <Toaster />
-      <div className="patient-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-bold">
-            Hello, <span className="font-light">User Name</span>
-          </h1>
-        </div>
-
-        <div className="text-center flex-1">
-          <h2 className="text-2xl font-extrabold tracking-wide drop-shadow-md">
-            🏥 CityCare Hospital
-          </h2>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="bg-white text-blue-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-blue-100 transition cursor-pointer">
-            Profile
-          </button>
-          <button className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer">
-            Sign out
-          </button>
-        </div>
-      </div>
 
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">

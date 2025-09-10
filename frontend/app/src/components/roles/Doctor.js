@@ -1,10 +1,19 @@
 import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { appointments as initialAppointments } from "../mockData/patientAppointments";
-import PatientCard from "./components/doctor/PatientCard";
-import PrescriptionForm from "./components/doctor/prescription";
+
+import { appointments as initialAppointments } from "../mockData/doctor/PatientAppointments";
+
+import PatientCard from "./components/doctor/PatientCard"; // Cards ( patient details )
+import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient
+import {
+  addPrescription,
+  updatePrescriptionByPatientId,
+  getPrescriptionByPatientId,
+} from "../mockData/Prescription";
+import AgeDistribution from "./components/doctor/AgeDistribution"; // This is for graph
+
 import { motion, AnimatePresence } from "framer-motion";
-import AgeDistribution from "./components/doctor/AgeDistribution";
+
 import "./styles/Doctor.css";
 
 const Doctor = () => {
@@ -25,6 +34,8 @@ const Doctor = () => {
   };
 
   const handlePrescribe = (patient) => {
+    // console.log("patient");
+    // console.log(patient);
     setSelectedPatient(patient);
     setShowPrescriptionForm(true);
   };
@@ -35,15 +46,52 @@ const Doctor = () => {
   };
 
   const handleSavePrescription = (prescriptionData) => {
-    console.log("Prescription saved for patient:", prescriptionData);
-    toast.success(
-      `Prescription saved successfully for ${prescriptionData.patientName}!`,
-      {
+    console.log("Prescription data to save:", prescriptionData);
+
+    try {
+      // Check if prescription already exists for this patient
+      const existingPrescriptions = getPrescriptionByPatientId(
+        prescriptionData.patientId
+      );
+
+      let result;
+      if (existingPrescriptions && existingPrescriptions.length > 0) {
+        // Update existing prescription
+        result = updatePrescriptionByPatientId(
+          prescriptionData.patientId,
+          prescriptionData
+        );
+        console.log("Prescription updated:", result);
+        toast.success(
+          `Prescription updated successfully for ${prescriptionData.patientName}!`,
+          {
+            duration: 4000,
+            position: "top-center",
+          }
+        );
+      } else {
+        // Add new prescription
+        result = addPrescription(prescriptionData);
+        console.log("New prescription added:", result);
+        toast.success(
+          `Prescription created successfully for ${prescriptionData.patientName}!`,
+          {
+            duration: 4000,
+            position: "top-center",
+          }
+        );
+      }
+
+      // Update patient status to completed
+      handleStatusChange(prescriptionData.patientId, "Completed");
+      handleClosePrescription();
+    } catch (error) {
+      console.error("Error saving prescription:", error);
+      toast.error("Failed to save prescription. Please try again.", {
         duration: 4000,
         position: "top-center",
-      }
-    );
-    handleClosePrescription();
+      });
+    }
   };
 
   const filteredAppointments =

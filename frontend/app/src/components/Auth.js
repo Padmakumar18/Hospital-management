@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import axios from "axios";
 
 const Auth = () => {
+  // const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = "http://localhost:8080";
+
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -19,6 +25,59 @@ const Auth = () => {
       [e.target.name]: e.target.value,
     });
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isLogin) {
+      try {
+        const response = await axios.post(`${API_URL}/auth/login`, {
+          email: formData.email,
+          password: formData.password,
+        });
+        const result = response.data;
+        console.log("Login response:", result);
+
+        if (result.success) {
+          toast.success("Login successful!");
+          localStorage.setItem("hsp-email-id", formData.email);
+          localStorage.setItem("hsp-password", formData.password);
+
+          // navigate("/home");
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        toast.error("Login failed. Please try again.");
+      }
+      console.log("Login attempt:", {
+        email: formData.email,
+        password: formData.password,
+      });
+    } else {
+      console.log("Signup attempt:", formData);
+      try {
+        const response = await axios.post(`${API_URL}/auth/signup`, {
+          email: formData.email,
+          password: formData.password,
+          name: formData.fullName,
+          role: formData.role,
+        });
+        const result = response.data;
+        console.log("Signup response:", result);
+
+        if (result.success) {
+          toast.success("Singup successful !");
+          localStorage.setItem("hsp-email-id", formData.email);
+          localStorage.setItem("hsp-password", formData.password);
+
+          // navigate("/home");
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        toast.error("Signup failed. Please try again.");
+      }
+    }
+  };
+
   useEffect(() => {
     const savedEmail = localStorage.getItem("hsp-email-id");
     const savedPassword = localStorage.getItem("hsp-password");
@@ -38,20 +97,6 @@ const Auth = () => {
       }));
     }
   }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isLogin) {
-      console.log("Login attempt:", {
-        email: formData.email,
-        password: formData.password,
-      });
-    } else {
-      console.log("Signup attempt:", formData);
-    }
-    localStorage.setItem("hsp-email-id", formData.email);
-    localStorage.setItem("hsp-password", formData.password);
-  };
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
@@ -191,18 +236,6 @@ const Auth = () => {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
                 >
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-                    placeholder="Confirm your password"
-                    required={!isLogin}
-                  />
                   <label className="block text-sm font-medium text-gray-700 mt-3">
                     Role
                   </label>
