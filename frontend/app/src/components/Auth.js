@@ -3,9 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+import { useDispatch } from "react-redux";
+import { setProfile } from "../Redux/slice";
+
 import axios from "axios";
 
 const Auth = () => {
+  const dispatch = useDispatch();
+
   const API_URL = "http://localhost:8080";
 
   const navigate = useNavigate();
@@ -34,13 +39,16 @@ const Auth = () => {
           password: formData.password,
         });
         const result = response.data;
-        console.log("Login response:", result);
+        console.log("Login response:", response);
+        console.log("Login result:", result);
 
         if (result.success) {
           toast.success("Login successful!");
           localStorage.setItem("hsp-email-id", formData.email);
           localStorage.setItem("hsp-password", formData.password);
           clearForm();
+
+          dispatch(setProfile(result));
 
           // navigate("/home");
         }
