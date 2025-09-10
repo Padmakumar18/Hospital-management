@@ -1,32 +1,34 @@
 package com.hospitalmanagement.backend.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
+import java.util.UUID;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class User {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID")
+    private UUID id;
 
     private String email;
+
+    @Column(name = "email_password")
     private String password;
     private String name;
     private String role;
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -52,5 +54,13 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

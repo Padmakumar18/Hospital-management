@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import axios from "axios";
 
 const Auth = () => {
-  // const API_URL = process.env.REACT_APP_API_URL;
   const API_URL = "http://localhost:8080";
 
   const navigate = useNavigate();
@@ -41,6 +40,7 @@ const Auth = () => {
           toast.success("Login successful!");
           localStorage.setItem("hsp-email-id", formData.email);
           localStorage.setItem("hsp-password", formData.password);
+          clearForm();
 
           // navigate("/home");
         }
@@ -68,6 +68,7 @@ const Auth = () => {
           toast.success("Singup successful !");
           localStorage.setItem("hsp-email-id", formData.email);
           localStorage.setItem("hsp-password", formData.password);
+          clearForm();
 
           // navigate("/home");
         }
@@ -135,6 +136,16 @@ const Auth = () => {
       x: isLogin ? 30 : -30,
       transition: { duration: 0.3, ease: "easeIn" },
     },
+  };
+
+  const clearForm = () => {
+    setFormData({
+      email: "",
+      password: "",
+      confirmPassword: "",
+      fullName: "",
+      role: "",
+    });
   };
 
   return (
