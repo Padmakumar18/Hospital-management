@@ -16,13 +16,11 @@ public class AuthController {
         this.userService = userService;
     }
 
-    // Simple login request DTO
     static class LoginRequest {
         public String email;
         public String password;
     }
 
-    // Simple login response DTO
     static class LoginResponse {
         public boolean success;
         public String message;
@@ -58,7 +56,6 @@ public class AuthController {
             user.setEmail(signupRequest.email);
             user.setPassword(signupRequest.password);
             user.setRole(signupRequest.role);
-            // role can be saved if you add a column in User entity
 
             userService.createUser(user);
 
@@ -75,14 +72,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        User user = userService.login(request.email, request.password);
 
+        System.out.println("-------------------");
+        System.out.println(user.getEmail());
+        System.out.println(user.getPassword());
+        System.out.println(user.getRole());
+        System.out.println("-------------------");
         System.out.println(request.email);
         System.out.println(request.password);
-        // Hardcoded user credentials for demo
-        String demoUser = "padmakumar23.dev@gmail.com";
-        String demoPass = "##pk545A";
 
-        if (demoUser.equals(request.email) && demoPass.equals(request.password)) {
+        if (user != null && user.getEmail().equals(request.email) && user.getPassword().equals(request.password)) {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(new LoginResponse(true, "Login successful!"));

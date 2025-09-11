@@ -50,7 +50,7 @@ const Auth = () => {
 
           dispatch(setProfile(result));
 
-          // navigate("/home");
+          navigate("/home");
         }
       } catch (error) {
         console.error("Login error:", error);
@@ -78,7 +78,7 @@ const Auth = () => {
           localStorage.setItem("hsp-password", formData.password);
           clearForm();
 
-          // navigate("/home");
+          navigate("/home");
         }
       } catch (error) {
         console.error("Login error:", error);
