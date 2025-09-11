@@ -4,13 +4,14 @@ import toast, { Toaster } from "react-hot-toast";
 import { appointments as initialAppointments } from "../mockData/doctor/PatientAppointments";
 
 import PatientCard from "./components/doctor/PatientCard"; // Cards ( patient details )
-import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient
+import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient ( Form )
 import {
   addPrescription,
   updatePrescriptionByPatientId,
   getPrescriptionByPatientId,
 } from "../mockData/Prescription";
 import AgeDistribution from "./components/doctor/AgeDistribution"; // This is for graph
+import LoadingExamples from "../examples/LoadingExamples";
 
 import { motion, AnimatePresence } from "framer-motion";
 
