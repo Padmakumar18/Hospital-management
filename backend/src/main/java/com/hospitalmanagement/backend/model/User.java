@@ -16,12 +16,13 @@ public class User {
     )
     @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID")
     private UUID id;
-
+    @Column(name = "user_email")
     private String email;
-
     @Column(name = "email_password")
     private String password;
+    @Column(name = "user_name")
     private String name;
+    @Column(name = "user_role")
     private String role;
 
     public String getEmail() {
