@@ -1,7 +1,15 @@
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
 
 const Home = () => {
   const navigate = useNavigate();
+  const profileFromStore = useSelector((state) => state.profile.profile);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    setProfile(profileFromStore);
+  }, [profileFromStore]);
 
   const signOut = (e) => {
     e.preventDefault();
@@ -24,11 +32,11 @@ const Home = () => {
       </div>
 
       <div className="flex items-center space-x-4">
-        <button className="bg-white text-blue-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-blue-100 transition cursor-pointer">
+        {/* <button className="bg-white text-blue-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-blue-100 transition cursor-pointer">
           Profile
-        </button>
+        </button> */}
         <button
-          className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer"
+          className="bg-white text-red-600 px-4 py-1 rounded-sm shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer"
           onClick={(e) => {
             signOut(e);
           }}

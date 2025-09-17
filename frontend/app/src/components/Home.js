@@ -9,8 +9,8 @@ const Home = () => {
   return (
     <div className="container-fluid">
       <div className="home-header">
-        <Header />
-        {/* <Doctor /> */}
+        {/* <Header /> */}
+        <Doctor />
         <Patient />
         {/* <Pharmacist /> */}
         {/* <Admin /> */}

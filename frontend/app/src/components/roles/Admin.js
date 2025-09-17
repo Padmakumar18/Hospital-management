@@ -146,32 +146,6 @@ const Admin = () => {
 
   return (
     <div className="container-fluid min-h-screen bg-gray-50">
-      <Toaster />
-
-      {/* Header */}
-      <div className="admin-header flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-700 text-white px-6 py-4 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-bold">
-            Hello, <span className="font-light">Administrator</span>
-          </h1>
-        </div>
-
-        <div className="text-center flex-1">
-          <h2 className="text-2xl font-extrabold tracking-wide drop-shadow-md">
-            ⚙️ CityCare Admin Panel
-          </h2>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="bg-white text-purple-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-purple-100 transition cursor-pointer">
-            Settings
-          </button>
-          <button className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer">
-            Sign out
-          </button>
-        </div>
-      </div>
-
       <div className="p-6">
         {/* Navigation Tabs */}
         <div className="flex space-x-2 mb-6">

@@ -3,10 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+import { useDispatch } from "react-redux";
+import { setProfile } from "../Redux/slice";
+
 import axios from "axios";
 
 const Auth = () => {
-  // const API_URL = process.env.REACT_APP_API_URL;
+  const dispatch = useDispatch();
+
   const API_URL = "http://localhost:8080";
 
   const navigate = useNavigate();
@@ -26,55 +30,68 @@ const Auth = () => {
     });
   };
 
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email: formData.email,
+        password: formData.password,
+      });
+      const result = response.data;
+      console.log("Login response:", response);
+      console.log("Login result:", result);
+
+      if (result.success) {
+        toast.success("Login successful!");
+        localStorage.setItem("hsp-email-id", formData.email);
+        localStorage.setItem("hsp-password", formData.password);
+        clearForm();
+
+        dispatch(setProfile(result));
+
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again.");
+    }
+  };
+
+  const handleSignup = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/signup`, {
+        email: formData.email,
+        password: formData.password,
+        name: formData.fullName,
+        role: formData.role,
+      });
+      const result = response.data;
+      console.log("Signup response:", result);
+
+      if (result.success) {
+        toast.success("Singup successful !");
+        localStorage.setItem("hsp-email-id", formData.email);
+        localStorage.setItem("hsp-password", formData.password);
+        clearForm();
+
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Signup failed. Please try again.");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLogin) {
-      try {
-        const response = await axios.post(`${API_URL}/auth/login`, {
-          email: formData.email,
-          password: formData.password,
-        });
-        const result = response.data;
-        console.log("Login response:", result);
-
-        if (result.success) {
-          toast.success("Login successful!");
-          localStorage.setItem("hsp-email-id", formData.email);
-          localStorage.setItem("hsp-password", formData.password);
-
-          // navigate("/home");
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        toast.error("Login failed. Please try again.");
-      }
+      handleLogin();
       console.log("Login attempt:", {
         email: formData.email,
         password: formData.password,
       });
     } else {
+      handleSignup();
       console.log("Signup attempt:", formData);
-      try {
-        const response = await axios.post(`${API_URL}/auth/signup`, {
-          email: formData.email,
-          password: formData.password,
-          name: formData.fullName,
-          role: formData.role,
-        });
-        const result = response.data;
-        console.log("Signup response:", result);
-
-        if (result.success) {
-          toast.success("Singup successful !");
-          localStorage.setItem("hsp-email-id", formData.email);
-          localStorage.setItem("hsp-password", formData.password);
-
-          // navigate("/home");
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        toast.error("Signup failed. Please try again.");
-      }
     }
   };
 
@@ -83,6 +100,9 @@ const Auth = () => {
     const savedPassword = localStorage.getItem("hsp-password");
 
     if (savedEmail && savedPassword) {
+      formData.email = savedEmail;
+      formData.password = savedPassword;
+      handleLogin();
       navigate("/home"); // auto navigate
 
       console.log("Auto login with:", {
@@ -135,6 +155,16 @@ const Auth = () => {
       x: isLogin ? 30 : -30,
       transition: { duration: 0.3, ease: "easeIn" },
     },
+  };
+
+  const clearForm = () => {
+    setFormData({
+      email: "",
+      password: "",
+      confirmPassword: "",
+      fullName: "",
+      role: "",
+    });
   };
 
   return (

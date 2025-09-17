@@ -4,13 +4,14 @@ import toast, { Toaster } from "react-hot-toast";
 import { appointments as initialAppointments } from "../mockData/doctor/PatientAppointments";
 
 import PatientCard from "./components/doctor/PatientCard"; // Cards ( patient details )
-import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient
+import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient ( Form )
 import {
   addPrescription,
   updatePrescriptionByPatientId,
   getPrescriptionByPatientId,
 } from "../mockData/Prescription";
 import AgeDistribution from "./components/doctor/AgeDistribution"; // This is for graph
+import LoadingExamples from "../examples/LoadingExamples";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -120,30 +121,6 @@ const Doctor = () => {
 
   return (
     <div className="container-fluid">
-      <Toaster />
-      <div className="doctor-header flex items-center justify-between bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-bold">
-            Hello, <span className="font-light">User Name</span>
-          </h1>
-        </div>
-
-        <div className="text-center flex-1">
-          <h2 className="text-2xl font-extrabold tracking-wide drop-shadow-md">
-            🏥 CityCare Hospital
-          </h2>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="bg-white text-blue-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-blue-100 transition cursor-pointer">
-            Profile
-          </button>
-          <button className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer">
-            Sign out
-          </button>
-        </div>
-      </div>
-
       <div className="appointments p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">

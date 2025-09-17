@@ -47,6 +47,13 @@ const Pharmacist = () => {
     return filtered;
   };
 
+  const handleCancelMedicine = (patientId) => {
+    setPatients((prev) =>
+      prev.map((p) => (p.id === patientId ? { ...p, status: "Cancelled" } : p))
+    );
+    toast.success("Medicine dispensing cancelled.");
+  };
+
   const handleDispenseMedicine = (patientId) => {
     setPatients((prev) =>
       prev.map((p) => (p.id === patientId ? { ...p, status: "Dispensed" } : p))
@@ -104,32 +111,6 @@ const Pharmacist = () => {
 
   return (
     <div className="container-fluid min-h-screen bg-gray-50">
-      <Toaster />
-
-      {/* Header */}
-      <div className="pharmacist-header flex items-center justify-between bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-bold">
-            Hello, <span className="font-light">Pharmacist</span>
-          </h1>
-        </div>
-
-        <div className="text-center flex-1">
-          <h2 className="text-2xl font-extrabold tracking-wide drop-shadow-md">
-            💊 CityCare Pharmacy
-          </h2>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="bg-white text-green-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-green-100 transition cursor-pointer">
-            Profile
-          </button>
-          <button className="bg-white text-red-600 px-4 py-1 rounded-lg shadow-md text-sm font-semibold hover:bg-red-100 transition cursor-pointer">
-            Sign out
-          </button>
-        </div>
-      </div>
-
       <div className="p-6">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -438,6 +419,27 @@ const Pharmacist = () => {
                         />
                       </svg>
                       <span>Dispense Medicine</span>
+                    </button>
+                  )}
+                  {patient.status === "Pending" && (
+                    <button
+                      onClick={() => handleCancelMedicine(patient.id)}
+                      className="w-full bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center justify-center space-x-1"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      <span>Cancel Medicine</span>
                     </button>
                   )}
 
