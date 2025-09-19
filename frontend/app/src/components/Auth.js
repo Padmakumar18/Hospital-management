@@ -39,6 +39,7 @@ const Auth = () => {
       const result = response.data;
       console.log("Login response:", response);
       console.log("Login result:", result);
+      console.log("Login User:", result.user);
 
       if (result.success) {
         toast.success("Login successful!");
@@ -46,7 +47,7 @@ const Auth = () => {
         localStorage.setItem("hsp-password", formData.password);
         clearForm();
 
-        dispatch(setProfile(result));
+        dispatch(setProfile(result.user));
 
         navigate("/home");
       }

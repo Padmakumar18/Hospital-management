@@ -4,14 +4,17 @@ import Pharmacist from "./roles/Pharmacist";
 import Admin from "./roles/Admin";
 import Auth from "./Auth";
 import Header from "./Header";
+import LoadingExamples from "./examples/LoadingExamples";
 
 const Home = () => {
   return (
     <div className="container-fluid">
       <div className="home-header">
-        {/* <Header /> */}
+        {/* <LoadingExamples /> */}
+
+        <Header />
         <Doctor />
-        <Patient />
+        {/* <Patient /> */}
         {/* <Pharmacist /> */}
         {/* <Admin /> */}
       </div>

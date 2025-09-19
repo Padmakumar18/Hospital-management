@@ -24,10 +24,12 @@ public class AuthController {
     static class LoginResponse {
         public boolean success;
         public String message;
+        public User user;
 
-        public LoginResponse(boolean success, String message) {
+        public LoginResponse(boolean success, String message,User user) {
             this.success = success;
             this.message = message;
+            this.user = user;
         }
     }
 
@@ -85,11 +87,11 @@ public class AuthController {
         if (user != null && user.getEmail().equals(request.email) && user.getPassword().equals(request.password)) {
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(new LoginResponse(true, "Login successful!"));
+                    .body(new LoginResponse(true, "Login successful!",user));
         } else {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(new LoginResponse(false, "Invalid username or password"));
+                    .body(new LoginResponse(false, "Invalid username or password",null));
         }
     }
 }
