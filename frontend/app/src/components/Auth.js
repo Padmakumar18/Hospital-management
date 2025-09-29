@@ -6,6 +6,8 @@ import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { setProfile } from "../Redux/slice";
 
+import { handleLogin as loginFunction } from "./services/AuthService";
+
 import axios from "axios";
 
 const Auth = () => {
@@ -31,27 +33,21 @@ const Auth = () => {
   };
 
   const handleLogin = async () => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        email: formData.email,
-        password: formData.password,
-      });
+    const response = await loginFunction(formData.email, formData.password);
+    console.log("response from loginFunction:");
+    console.log(response);
+
+    if (response) {
       const result = response.data;
-      console.log("Login response:", response);
-      console.log("Login result:", result);
+      toast.success("Login successful!");
+      localStorage.setItem("hsp-email-id", formData.email);
+      localStorage.setItem("hsp-password", formData.password);
+      // clearForm();
 
-      if (result.success) {
-        toast.success("Login successful!");
-        localStorage.setItem("hsp-email-id", formData.email);
-        localStorage.setItem("hsp-password", formData.password);
-        clearForm();
+      dispatch(setProfile(result.user));
 
-        dispatch(setProfile(result));
-
-        navigate("/home");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
+      // navigate("/home");
+    } else {
       toast.error("Login failed. Please try again.");
     }
   };
@@ -102,8 +98,7 @@ const Auth = () => {
     if (savedEmail && savedPassword) {
       formData.email = savedEmail;
       formData.password = savedPassword;
-      handleLogin();
-      navigate("/home"); // auto navigate
+      loginFunction();
 
       console.log("Auto login with:", {
         email: savedEmail,
@@ -115,6 +110,7 @@ const Auth = () => {
         email: savedEmail,
         password: savedPassword,
       }));
+      navigate("/home"); // auto navigate
     }
   }, []);
 
