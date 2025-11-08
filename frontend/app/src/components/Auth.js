@@ -24,6 +24,7 @@ const Auth = () => {
     confirmPassword: "",
     fullName: "",
     role: "",
+    phone: "",
   });
 
   const handleInputChange = (e) => {
@@ -83,6 +84,7 @@ const Auth = () => {
         password: formData.password,
         name: formData.fullName,
         role: formData.role,
+        phone: formData.phone,
       });
       const result = response.data;
       console.log("Signup response:", result);
@@ -217,6 +219,7 @@ const Auth = () => {
       confirmPassword: "",
       fullName: "",
       role: "",
+      phone: "",
     });
   };
 
@@ -255,6 +258,7 @@ const Auth = () => {
       confirmPassword: "",
       fullName: "",
       role: "",
+      phone: "",
     });
   };
 
@@ -346,6 +350,28 @@ const Auth = () => {
                   required
                 />
               </div>
+
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                    placeholder="Enter your phone number"
+                    required={!isLogin}
+                  />
+                </motion.div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
