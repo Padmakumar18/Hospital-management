@@ -3,37 +3,56 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 
+import { useEffect } from "react";
 import Auth from "./components/Auth";
 import Home from "./components/Home";
 import ErrorPage from "./components/ErrorPage";
-import { handleLogin } from "./components/services/AuthService";
-import { useEffect } from "react";
+import WaitingApproval from "./components/WaitingApproval";
+// import { handleLogin } from "./components/services/AuthService";
+import ProtectedRoute from "./components/services/ProtectedRoute";
 
-function App() {
-  useEffect(() => {
-    const email = localStorage.getItem("hsp-email-id");
-    const password = localStorage.getItem("hsp-password");
-    if (email && password && handleLogin(email, password)) {
-      return <Navigate to="/login" replace />;
-    }
-  });
+function AppWrapper() {
   return (
-    <div className="App">
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/auth" replace />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="*" element={<ErrorPage />} />
-        </Routes>
-      </Router>
-      {/* <Auth />
-      <Profile />
-      <Home /> */}
-    </div>
+    <Router>
+      <App />
+    </Router>
   );
 }
 
-export default App;
+function App() {
+  const navigate = useNavigate();
+
+  // useEffect(() => {
+  //   const checkSavedCredentials = async () => {
+  //     const email = localStorage.getItem("hsp-email-id");
+  //     const password = localStorage.getItem("hsp-password");
+  //     if (email && password && (await handleLogin(email, password))) {
+  //       console.log("Auto-login successful");
+  //       navigate("/home", { replace: true });
+  //     }
+  //   };
+  //   checkSavedCredentials();
+  // }, [navigate]);
+
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/auth" replace />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/waiting-approval" element={<WaitingApproval />} />
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<ErrorPage />} />
+    </Routes>
+  );
+}
+
+export default AppWrapper;

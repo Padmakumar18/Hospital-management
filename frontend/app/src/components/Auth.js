@@ -17,12 +17,14 @@ const Auth = () => {
 
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [isAutoLogging, setIsAutoLogging] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
     fullName: "",
     role: "",
+    phone: "",
   });
 
   const handleInputChange = (e) => {
@@ -37,18 +39,41 @@ const Auth = () => {
     console.log("response from loginFunction:");
     console.log(response);
 
-    if (response) {
+    if (response && response.pendingApproval) {
+      // User account is pending approval
+      toast.error(
+        response.data.message || "Your account is pending admin approval.",
+        {
+          duration: 5000,
+          position: "top-center",
+        }
+      );
+
+      // Redirect to waiting approval page
+      navigate("/waiting-approval", {
+        state: {
+          userEmail: formData.email,
+          userName: formData.name || "User",
+          userRole: "Doctor/Pharmacist",
+        },
+      });
+    } else if (response) {
       const result = response.data;
-      toast.success("Login successful!");
+      toast.success("Login successful!", {
+        duration: 5000,
+        position: "top-center",
+      });
       localStorage.setItem("hsp-email-id", formData.email);
       localStorage.setItem("hsp-password", formData.password);
-      // clearForm();
 
       dispatch(setProfile(result.user));
 
-      // navigate("/home");
+      navigate("/home");
     } else {
-      toast.error("Login failed. Please try again.");
+      toast.error("Login failed. Please try again.", {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 
@@ -59,21 +84,62 @@ const Auth = () => {
         password: formData.password,
         name: formData.fullName,
         role: formData.role,
+        phone: formData.phone,
       });
       const result = response.data;
       console.log("Signup response:", result);
 
       if (result.success) {
-        toast.success("Singup successful !");
-        localStorage.setItem("hsp-email-id", formData.email);
-        localStorage.setItem("hsp-password", formData.password);
-        clearForm();
+        // Check if the message indicates pending approval
+        const needsApproval = result.message.includes(
+          "Waiting for admin approval"
+        );
 
-        navigate("/home");
+        if (needsApproval) {
+          // Doctor or Pharmacist - needs approval
+          toast.success(result.message, {
+            duration: 5000,
+            position: "top-center",
+          });
+
+          clearForm();
+          navigate("/waiting-approval", {
+            state: {
+              userEmail: formData.email,
+              userName: formData.fullName,
+              userRole: formData.role,
+            },
+          });
+        } else {
+          // Patient or Admin - auto-verified
+          toast.success("Signup successful!", {
+            duration: 5000,
+            position: "top-center",
+          });
+
+          localStorage.setItem("hsp-email-id", formData.email);
+          localStorage.setItem("hsp-password", formData.password);
+
+          // Set profile in Redux with the user data
+          const userProfile = {
+            email: formData.email,
+            name: formData.fullName,
+            role: formData.role,
+          };
+          dispatch(setProfile(userProfile));
+
+          clearForm();
+          navigate("/home");
+        }
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Signup failed. Please try again.");
+      console.error("Signup error:", error);
+      const errorMessage =
+        error.response?.data?.message || "Signup failed. Please try again.";
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 
@@ -96,23 +162,54 @@ const Auth = () => {
     const savedPassword = localStorage.getItem("hsp-password");
 
     if (savedEmail && savedPassword) {
-      formData.email = savedEmail;
-      formData.password = savedPassword;
-      loginFunction();
+      const autoLogin = async () => {
+        try {
+          const response = await loginFunction(savedEmail, savedPassword);
 
-      console.log("Auto login with:", {
-        email: savedEmail,
-        password: savedPassword,
-      });
+          if (response && response.pendingApproval) {
+            // User account is pending approval
+            toast.error(
+              response.data.message ||
+                "Your account is pending admin approval.",
+              {
+                duration: 5000,
+                position: "top-center",
+              }
+            );
 
-      setFormData((prev) => ({
-        ...prev,
-        email: savedEmail,
-        password: savedPassword,
-      }));
-      navigate("/home"); // auto navigate
+            // Clear credentials and redirect to waiting approval page
+            localStorage.removeItem("hsp-email-id");
+            localStorage.removeItem("hsp-password");
+
+            navigate("/waiting-approval", {
+              state: {
+                userEmail: savedEmail,
+                userName: "User",
+                userRole: "Doctor/Pharmacist",
+              },
+            });
+          } else if (response && response.data && response.data.success) {
+            dispatch(setProfile(response.data.user));
+            navigate("/home");
+          } else {
+            // Clear invalid credentials
+            localStorage.removeItem("hsp-email-id");
+            localStorage.removeItem("hsp-password");
+          }
+        } catch (error) {
+          console.error("Auto-login failed:", error);
+          // Clear invalid credentials
+          localStorage.removeItem("hsp-email-id");
+          localStorage.removeItem("hsp-password");
+        } finally {
+          setIsAutoLogging(false);
+        }
+      };
+      autoLogin();
+    } else {
+      setIsAutoLogging(false);
     }
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
@@ -122,6 +219,7 @@ const Auth = () => {
       confirmPassword: "",
       fullName: "",
       role: "",
+      phone: "",
     });
   };
 
@@ -160,8 +258,21 @@ const Auth = () => {
       confirmPassword: "",
       fullName: "",
       role: "",
+      phone: "",
     });
   };
+
+  // Show loading while checking auto-login
+  if (isAutoLogging) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -239,6 +350,28 @@ const Auth = () => {
                   required
                 />
               </div>
+
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                    placeholder="Enter your phone number"
+                    required={!isLogin}
+                  />
+                </motion.div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

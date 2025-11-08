@@ -1,385 +1,374 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
-import {
-  pharmacyPatients,
-  getPharmacyStats,
-} from "../mockData/pharmacist/PharmacistMockdata";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { prescriptionAPI } from "../../services/api";
 
 const Pharmacist = () => {
-  const [patients, setPatients] = useState(pharmacyPatients);
-  const [activeTab, setActiveTab] = useState("pending");
-  const [stats, setStats] = useState({});
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
-  const [showBillModal, setShowBillModal] = useState(false);
+  const profile = useSelector((state) => state.profile.profile);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [filteredPrescriptions, setFilteredPrescriptions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedPrescription, setSelectedPrescription] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const pharmacyStats = getPharmacyStats();
-    setStats(pharmacyStats);
-  }, [patients]);
+    loadPrescriptions();
+  }, []);
 
-  const getFilteredPatients = () => {
-    let filtered = [];
-    switch (activeTab) {
-      case "pending":
-        filtered = patients.filter((p) => p.status === "Pending");
-        break;
-      case "dispensed":
-        filtered = patients.filter((p) => p.status === "Dispensed");
-        break;
-      case "all":
-        filtered = patients;
-        break;
-      default:
-        filtered = patients;
+  useEffect(() => {
+    filterPrescriptions();
+  }, [searchTerm, statusFilter, prescriptions]);
+
+  const loadPrescriptions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await prescriptionAPI.getAll();
+      const prescriptionsWithStatus = response.data.map((p) => ({
+        ...p,
+        dispensedStatus: p.dispensedStatus || "Pending",
+      }));
+      setPrescriptions(prescriptionsWithStatus);
+    } catch (error) {
+      console.error("Error loading prescriptions:", error);
+      toast.error("Failed to load prescriptions", {
+        duration: 5000,
+        position: "top-center",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const filterPrescriptions = () => {
+    let filtered = prescriptions;
 
     if (searchTerm) {
       filtered = filtered.filter(
         (p) =>
-          p.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.appointmentId.toLowerCase().includes(searchTerm.toLowerCase())
+          p.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.doctorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.id?.toString().includes(searchTerm)
       );
     }
 
-    return filtered;
-  };
-
-  const handleCancelMedicine = (patientId) => {
-    setPatients((prev) =>
-      prev.map((p) => (p.id === patientId ? { ...p, status: "Cancelled" } : p))
-    );
-    toast.success("Medicine dispensing cancelled.");
-  };
-
-  const handleDispenseMedicine = (patientId) => {
-    setPatients((prev) =>
-      prev.map((p) => (p.id === patientId ? { ...p, status: "Dispensed" } : p))
-    );
-    toast.success("Medicine dispensed successfully!", {
-      duration: 3000,
-      position: "top-right",
-    });
-  };
-
-  const handleGenerateBill = (patient) => {
-    const billId = `BILL${String(Date.now()).slice(-6)}`;
-    const billDate = new Date().toISOString().split("T")[0];
-
-    setPatients((prev) =>
-      prev.map((p) =>
-        p.id === patient.id
-          ? {
-              ...p,
-              billGenerated: true,
-              billId: billId,
-              billDate: billDate,
-            }
-          : p
-      )
-    );
-
-    toast.success(`Bill ${billId} generated successfully!`, {
-      duration: 4000,
-      position: "top-right",
-    });
-    setShowBillModal(false);
-  };
-
-  const handleViewPrescription = (patient) => {
-    setSelectedPatient(patient);
-    setShowPrescriptionModal(true);
-  };
-
-  const handleViewBill = (patient) => {
-    setSelectedPatient(patient);
-    setShowBillModal(true);
-  };
-
-  const getStatusBadgeStyle = (status) => {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "Dispensed":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((p) => p.dispensedStatus === statusFilter);
     }
+
+    setFilteredPrescriptions(filtered);
   };
+
+  const handleDispense = (prescription) => {
+    setSelectedPrescription(prescription);
+    setShowDetailModal(true);
+  };
+
+  const confirmDispense = () => {
+    const updatedPrescriptions = prescriptions.map((p) =>
+      p.id === selectedPrescription.id
+        ? {
+            ...p,
+            dispensedStatus: "Dispensed",
+            dispensedDate: new Date().toISOString(),
+          }
+        : p
+    );
+    setPrescriptions(updatedPrescriptions);
+    setShowDetailModal(false);
+    toast.success(
+      `Prescription dispensed for ${selectedPrescription.patientName}`,
+      {
+        duration: 5000,
+        position: "top-center",
+      }
+    );
+  };
+
+  const getStatus = (prescription) => {
+    return prescription.dispensedStatus || "Pending";
+  };
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      Pending: "bg-yellow-100 text-yellow-800",
+      Dispensed: "bg-green-100 text-green-800",
+      Cancelled: "bg-red-100 text-red-800",
+    };
+    return styles[status] || "bg-gray-100 text-gray-800";
+  };
+
+  const stats = {
+    total: prescriptions.length,
+    pending: prescriptions.filter((p) => getStatus(p) === "Pending").length,
+    dispensed: prescriptions.filter((p) => getStatus(p) === "Dispensed").length,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading prescriptions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container-fluid min-h-screen bg-gray-50">
-      <div className="p-6">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <motion.div
-            className="bg-blue-500 text-white rounded-lg p-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm">Total Prescriptions</p>
-                <p className="text-2xl font-bold">{stats.total || 0}</p>
-              </div>
-              <div className="text-blue-200">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
+    <div className="container-fluid min-h-screen bg-gray-50 p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          💊 Pharmacy Dashboard
+        </h1>
+        <p className="text-gray-600">Manage and dispense prescriptions</p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <motion.div
+          className="bg-blue-500 text-white rounded-lg p-6"
+          whileHover={{ scale: 1.02 }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm">Total Prescriptions</p>
+              <p className="text-3xl font-bold">{stats.total}</p>
             </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-yellow-500 text-white rounded-lg p-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-yellow-100 text-sm">Pending</p>
-                <p className="text-2xl font-bold">{stats.pending || 0}</p>
-              </div>
-              <div className="text-yellow-200">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-green-500 text-white rounded-lg p-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Dispensed</p>
-                <p className="text-2xl font-bold">{stats.dispensed || 0}</p>
-              </div>
-              <div className="text-green-200">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-purple-500 text-white rounded-lg p-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm">Billed</p>
-                <p className="text-2xl font-bold">{stats.billed || 0}</p>
-              </div>
-              <div className="text-purple-200">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-indigo-500 text-white rounded-lg p-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-100 text-sm">Revenue</p>
-                <p className="text-2xl font-bold">${stats.totalRevenue || 0}</p>
-              </div>
-              <div className="text-indigo-200">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                  />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="bg-white rounded-2xl shadow-xl p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
-            <h2 className="text-xl font-bold text-gray-800">
-              💊 Patient Prescriptions
-            </h2>
-
-            <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
-              {/* Search */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search by patient name or appointment ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-full md:w-80"
+            <div className="text-blue-200">
+              <svg
+                className="w-10 h-10"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
-                <svg
-                  className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setActiveTab("pending")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === "pending"
-                      ? "bg-yellow-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  Pending
-                </button>
-                <button
-                  onClick={() => setActiveTab("dispensed")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === "dispensed"
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  Dispensed
-                </button>
-                <button
-                  onClick={() => setActiveTab("all")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === "all"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  All
-                </button>
-              </div>
+              </svg>
             </div>
           </div>
+        </motion.div>
 
-          {/* Patient Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {getFilteredPatients().map((patient) => (
-              <motion.div
-                key={patient.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+        <motion.div
+          className="bg-yellow-500 text-white rounded-lg p-6"
+          whileHover={{ scale: 1.02 }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-yellow-100 text-sm">Pending</p>
+              <p className="text-3xl font-bold">{stats.pending}</p>
+            </div>
+            <div className="text-yellow-200">
+              <svg
+                className="w-10 h-10"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-800">
-                    {patient.patientName}
-                  </h3>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeStyle(
-                      patient.status
-                    )}`}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="bg-green-500 text-white rounded-lg p-6"
+          whileHover={{ scale: 1.02 }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm">Dispensed</p>
+              <p className="text-3xl font-bold">{stats.dispensed}</p>
+            </div>
+            <div className="text-green-200">
+              <svg
+                className="w-10 h-10"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by patient, doctor, or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Dispensed">Dispensed</option>
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+            }}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Prescriptions List */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Prescriptions</h2>
+
+        {filteredPrescriptions.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No prescriptions found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Patient
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Doctor
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Diagnosis
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Medicines
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Status
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPrescriptions.map((prescription) => (
+                  <tr
+                    key={prescription.id}
+                    className="border-b border-gray-200 hover:bg-gray-50"
                   >
-                    {patient.status}
-                  </span>
-                </div>
+                    <td className="p-4">
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {prescription.patientName}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {prescription.age} yrs, {prescription.gender}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="p-4 text-gray-600">
+                      {prescription.doctorName}
+                    </td>
+                    <td className="p-4 text-gray-600">
+                      {prescription.diagnosis}
+                    </td>
+                    <td className="p-4 text-gray-600">
+                      {prescription.medicines?.length || 0} items
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm ${getStatusBadge(
+                          getStatus(prescription)
+                        )}`}
+                      >
+                        {getStatus(prescription)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => handleDispense(prescription)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>
-                    <span className="font-medium">Age:</span> {patient.age}
-                  </p>
-                  <p>
-                    <span className="font-medium">Doctor:</span>{" "}
-                    {patient.doctor}
-                  </p>
-                  <p>
-                    <span className="font-medium">Department:</span>{" "}
-                    {patient.department}
-                  </p>
-                  <p>
-                    <span className="font-medium">Appointment ID:</span>{" "}
-                    {patient.appointmentId}
-                  </p>
-                  <p>
-                    <span className="font-medium">Date:</span>{" "}
-                    {new Date(patient.appointmentDate).toLocaleDateString()}
-                  </p>
-                  <p>
-                    <span className="font-medium">Total Amount:</span> $
-                    {patient.prescription.finalAmount}
-                  </p>
-                  {patient.billGenerated && (
-                    <p>
-                      <span className="font-medium">Bill ID:</span>{" "}
-                      {patient.billId}
-                    </p>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {showDetailModal && selectedPrescription && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDetailModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-gray-800">
+                    Prescription Details
+                  </h3>
                   <button
-                    onClick={() => handleViewPrescription(patient)}
-                    className="w-full bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center space-x-1"
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-6 h-6"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -388,496 +377,114 @@ const Pharmacist = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        d="M6 18L18 6M6 6l12 12"
                       />
                     </svg>
-                    <span>View Prescription</span>
                   </button>
-
-                  {patient.status === "Pending" && (
-                    <button
-                      onClick={() => handleDispenseMedicine(patient.id)}
-                      className="w-full bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center justify-center space-x-1"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span>Dispense Medicine</span>
-                    </button>
-                  )}
-                  {patient.status === "Pending" && (
-                    <button
-                      onClick={() => handleCancelMedicine(patient.id)}
-                      className="w-full bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center justify-center space-x-1"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      <span>Cancel Medicine</span>
-                    </button>
-                  )}
-
-                  {patient.status === "Dispensed" && !patient.billGenerated && (
-                    <button
-                      onClick={() => handleViewBill(patient)}
-                      className="w-full bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition-colors text-sm flex items-center justify-center space-x-1"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                      <span>Generate Bill</span>
-                    </button>
-                  )}
-
-                  {patient.billGenerated && (
-                    <button
-                      onClick={() => handleViewBill(patient)}
-                      className="w-full bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm flex items-center justify-center space-x-1"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                      <span>View Bill</span>
-                    </button>
-                  )}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
 
-        {/* Prescription Modal */}
-        <AnimatePresence>
-          {showPrescriptionModal && selectedPatient && (
-            <PrescriptionModal
-              patient={selectedPatient}
-              onClose={() => setShowPrescriptionModal(false)}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Bill Modal */}
-        <AnimatePresence>
-          {showBillModal && selectedPatient && (
-            <BillModal
-              patient={selectedPatient}
-              onClose={() => setShowBillModal(false)}
-              onGenerateBill={handleGenerateBill}
-            />
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-};
-
-// Prescription Modal Component
-const PrescriptionModal = ({ patient, onClose }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        {/* Header */}
-        <div className="bg-green-600 text-white p-6 rounded-t-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Prescription Details</h2>
-              <p className="text-green-100">Patient: {patient.patientName}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Patient Info */}
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-800 mb-2">
-                Patient Information
-              </h3>
-              <p className="text-lg font-medium">{patient.patientName}</p>
-              <p className="text-sm text-gray-600">
-                Age: {patient.age} | {patient.gender}
-              </p>
-              <p className="text-sm text-gray-600">
-                Contact: {patient.contact}
-              </p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-800 mb-2">
-                Appointment Details
-              </h3>
-              <p className="text-sm text-gray-600">
-                ID: {patient.appointmentId}
-              </p>
-              <p className="text-sm text-gray-600">Doctor: {patient.doctor}</p>
-              <p className="text-sm text-gray-600">
-                Department: {patient.department}
-              </p>
-              <p className="text-sm text-gray-600">
-                Date: {new Date(patient.appointmentDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-
-          {/* Diagnosis */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-800 mb-2">Diagnosis</h3>
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-              <p className="text-gray-800">{patient.prescription.diagnosis}</p>
-            </div>
-          </div>
-
-          {/* Medications */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-800 mb-4">
-              Prescribed Medications
-            </h3>
-            <div className="space-y-4">
-              {patient.prescription.medicines.map((medicine, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium text-lg text-gray-800">
-                      {medicine.name}
-                    </h4>
-                    <div className="text-right">
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">
-                        {medicine.inStock ? "In Stock" : "Out of Stock"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-4 gap-4 text-sm mb-3">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="font-medium text-gray-600">Type:</span>
-                      <p className="text-gray-800">{medicine.type}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Dosage:</span>
-                      <p className="text-gray-800">{medicine.dosage}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">
-                        Frequency:
-                      </span>
-                      <p className="text-gray-800">{medicine.frequency}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">
-                        Duration:
-                      </span>
-                      <p className="text-gray-800">{medicine.duration}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">
-                        Quantity:
-                      </span>
-                      <p className="text-gray-800">{medicine.quantity}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">
-                        Unit Price:
-                      </span>
-                      <p className="text-gray-800">${medicine.unitPrice}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Total:</span>
-                      <p className="text-gray-800 font-semibold">
-                        ${medicine.totalPrice}
+                      <p className="text-sm text-gray-600">Patient Name</p>
+                      <p className="font-semibold">
+                        {selectedPrescription.patientName}
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">Batch:</span>
-                      <p className="text-gray-800">{medicine.batchNo}</p>
+                      <p className="text-sm text-gray-600">Doctor Name</p>
+                      <p className="font-semibold">
+                        {selectedPrescription.doctorName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Age / Gender</p>
+                      <p className="font-semibold">
+                        {selectedPrescription.age} yrs /{" "}
+                        {selectedPrescription.gender}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm ${getStatusBadge(
+                          getStatus(selectedPrescription)
+                        )}`}
+                      >
+                        {getStatus(selectedPrescription)}
+                      </span>
                     </div>
                   </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600">Diagnosis</p>
+                    <p className="font-semibold">
+                      {selectedPrescription.diagnosis}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Medicines</p>
+                    <div className="space-y-2">
+                      {selectedPrescription.medicines?.map(
+                        (medicine, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 p-3 rounded-lg"
+                          >
+                            <p className="font-semibold">
+                              {medicine.medicineName}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {medicine.dosage} - {medicine.frequency} -{" "}
+                              {medicine.duration}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Quantity: {medicine.quantity}
+                            </p>
+                            {medicine.instruction && (
+                              <p className="text-sm text-gray-600 italic">
+                                {medicine.instruction}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedPrescription.additionalNotes && (
+                    <div>
+                      <p className="text-sm text-gray-600">Additional Notes</p>
+                      <p className="font-semibold">
+                        {selectedPrescription.additionalNotes}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Total */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center text-lg">
-              <span className="font-semibold">Total Amount:</span>
-              <span className="font-bold text-green-600">
-                ${patient.prescription.finalAmount}
-              </span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Bill Modal Component
-const BillModal = ({ patient, onClose, onGenerateBill }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        {/* Header */}
-        <div className="bg-purple-600 text-white p-6 rounded-t-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">
-                {patient.billGenerated ? "Bill Details" : "Generate Bill"}
-              </h2>
-              <p className="text-purple-100">Patient: {patient.patientName}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Bill Header */}
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-gray-800">
-              CityCare Pharmacy
-            </h3>
-            <p className="text-gray-600">Medical Bill</p>
-            {patient.billGenerated && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600">
-                  Bill ID: {patient.billId}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Date: {new Date(patient.billDate).toLocaleDateString()}
-                </p>
+                {getStatus(selectedPrescription) === "Pending" && (
+                  <div className="mt-6 flex space-x-3">
+                    <button
+                      onClick={confirmDispense}
+                      className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      Mark as Dispensed
+                    </button>
+                    <button
+                      onClick={() => setShowDetailModal(false)}
+                      className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* Patient Info */}
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Bill To:</h4>
-              <p className="font-medium">{patient.patientName}</p>
-              <p className="text-sm text-gray-600">Age: {patient.age}</p>
-              <p className="text-sm text-gray-600">
-                Contact: {patient.contact}
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-2">
-                Prescription Details:
-              </h4>
-              <p className="text-sm text-gray-600">
-                Appointment ID: {patient.appointmentId}
-              </p>
-              <p className="text-sm text-gray-600">Doctor: {patient.doctor}</p>
-              <p className="text-sm text-gray-600">
-                Date: {new Date(patient.appointmentDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-
-          {/* Medicine Items */}
-          <div className="mb-6">
-            <h4 className="font-semibold text-gray-800 mb-4">Items</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border border-gray-300 px-4 py-2 text-left">
-                      Medicine
-                    </th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">
-                      Qty
-                    </th>
-                    <th className="border border-gray-300 px-4 py-2 text-right">
-                      Unit Price
-                    </th>
-                    <th className="border border-gray-300 px-4 py-2 text-right">
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patient.prescription.medicines.map((medicine, index) => (
-                    <tr key={index}>
-                      <td className="border border-gray-300 px-4 py-2">
-                        <div>
-                          <p className="font-medium">{medicine.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {medicine.type} - {medicine.dosage}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
-                        {medicine.quantity}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-right">
-                        ${medicine.unitPrice}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-right font-medium">
-                        ${medicine.totalPrice}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Bill Summary */}
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>${patient.prescription.totalAmount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax (10%):</span>
-                <span>${patient.prescription.tax}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2">
-                <span>Total Amount:</span>
-                <span className="text-purple-600">
-                  ${patient.prescription.finalAmount}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex space-x-4">
-            {!patient.billGenerated ? (
-              <button
-                onClick={() => onGenerateBill(patient)}
-                className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Generate Bill
-              </button>
-            ) : (
-              <button
-                onClick={() => toast.success("Bill printed successfully!")}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Print Bill
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

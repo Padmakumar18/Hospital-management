@@ -19,6 +19,15 @@ export const handleLogin = async (email, password) => {
     }
   } catch (error) {
     console.error("Login error:", error);
+
+    // Check if it's a 403 (pending approval) error
+    if (error.response && error.response.status === 403) {
+      return {
+        status: 403,
+        data: error.response.data,
+        pendingApproval: true,
+      };
+    }
   }
   return false;
 };

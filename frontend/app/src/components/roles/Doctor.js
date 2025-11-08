@@ -1,43 +1,127 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { appointmentAPI, prescriptionAPI } from "../../services/api";
 
-import { appointments as initialAppointments } from "../mockData/doctor/PatientAppointments";
-
-import PatientCard from "./components/doctor/PatientCard"; // Cards ( patient details )
-import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient ( Form )
-import {
-  addPrescription,
-  updatePrescriptionByPatientId,
-  getPrescriptionByPatientId,
-} from "../mockData/Prescription";
-import AgeDistribution from "./components/doctor/AgeDistribution"; // This is for graph
-import LoadingExamples from "../examples/LoadingExamples";
+import PatientCard from "./components/doctor/PatientCard";
+import PrescriptionForm from "./components/doctor/Prescription";
+import AgeDistribution from "./components/doctor/AgeDistribution";
+import Loading from "../Loading";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 import "./styles/Doctor.css";
 
 const Doctor = () => {
+  const profile = useSelector((state) => state.profile.profile);
   const [filter, setFilter] = useState("");
-  const [appointmentData, setAppointmentData] = useState(initialAppointments);
+  const [appointmentData, setAppointmentData] = useState([]);
   const [showGraph, setShowGraph] = useState(false);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load appointments on component mount
+  useEffect(() => {
+    loadAppointments();
+  }, [profile]);
+
+  const loadAppointments = async () => {
+    try {
+      setIsLoading(true);
+      // Get all appointments
+      const response = await appointmentAPI.getAll();
+
+      // Filter to show only this doctor's appointments
+      const doctorAppointments = response.data.filter(
+        (apt) =>
+          apt.doctorName === profile?.name || apt.doctorId === profile?.email
+      );
+
+      console.log("Total appointments:", response.data.length);
+      console.log("Doctor's appointments:", doctorAppointments.length);
+      console.log("Filtering by doctor:", profile?.name, profile?.email);
+
+      setAppointmentData(doctorAppointments);
+    } catch (error) {
+      console.error("Error loading appointments:", error);
+      toast.error("Failed to load appointments", {
+        duration: 5000,
+        position: "top-center",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setAppointmentData((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-    );
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await appointmentAPI.updateStatus(id, newStatus);
+      setAppointmentData((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+      );
+      toast.success(`Appointment status updated to ${newStatus}`, {
+        duration: 5000,
+        position: "top-center",
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update appointment status", {
+        duration: 5000,
+        position: "top-center",
+      });
+    }
   };
 
-  const handlePrescribe = (patient) => {
-    // console.log("patient");
-    // console.log(patient);
+  const handlePrescribe = async (patient) => {
+    console.log("handlePrescribe - patient:", patient);
     setSelectedPatient(patient);
+
+    // If appointment is completed and has prescription, load it for viewing/editing
+    if (patient.status === "Completed" && patient.prescriptionGiven) {
+      try {
+        console.log("Loading existing prescription for:", patient.patientName);
+        const response = await prescriptionAPI.getByPatientName(
+          patient.patientName
+        );
+        console.log("Prescription response:", response.data);
+
+        // Handle both array and single object responses
+        let prescriptions = [];
+        if (Array.isArray(response.data)) {
+          prescriptions = response.data;
+        } else if (response.data) {
+          prescriptions = [response.data];
+        }
+
+        if (prescriptions.length > 0) {
+          // Find prescription matching this appointment date
+          const matchingPrescription =
+            prescriptions.find(
+              (p) =>
+                new Date(p.createdDate).toDateString() ===
+                new Date(patient.appointmentDate).toDateString()
+            ) || prescriptions[0];
+
+          console.log("Found prescription:", matchingPrescription);
+          setSelectedPatient({
+            ...patient,
+            existingPrescription: matchingPrescription,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading prescription:", error);
+        toast.error("Failed to load prescription", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
+    }
+
     setShowPrescriptionForm(true);
   };
 
@@ -46,50 +130,67 @@ const Doctor = () => {
     setSelectedPatient(null);
   };
 
-  const handleSavePrescription = (prescriptionData) => {
+  const handleSavePrescription = async (prescriptionData) => {
     console.log("Prescription data to save:", prescriptionData);
 
     try {
-      // Check if prescription already exists for this patient
-      const existingPrescriptions = getPrescriptionByPatientId(
-        prescriptionData.patientId
+      // Prepare prescription data with doctor info
+      const prescriptionToSave = {
+        ...prescriptionData,
+        doctorId: profile?.email || "",
+        doctorName: profile?.name || "Dr. Unknown",
+        // Map instructions to instruction (singular) for backend
+        medicines: prescriptionData.medicines.map((med) => ({
+          medicineName: med.medicineName,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          duration: med.duration,
+          instruction: med.instructions || "", // Map instructions to instruction
+          quantity: med.quantity,
+        })),
+      };
+
+      console.log("Sending prescription to backend:", prescriptionToSave);
+
+      // Create prescription via API
+      const response = await prescriptionAPI.create(prescriptionToSave);
+      console.log("Prescription created successfully:", response.data);
+
+      // Update appointment: mark as completed and prescription given
+      const updatedAppointment = {
+        ...selectedPatient,
+        status: "Completed",
+        prescriptionGiven: true,
+        followUpRequired: prescriptionToSave.followUpDate ? true : false,
+        followUpDate: prescriptionToSave.followUpDate || null,
+      };
+
+      await appointmentAPI.update(selectedPatient.id, updatedAppointment);
+
+      toast.success(
+        `Prescription created successfully for ${prescriptionData.patientName}!`,
+        {
+          duration: 5000,
+          position: "top-center",
+        }
       );
 
-      let result;
-      if (existingPrescriptions && existingPrescriptions.length > 0) {
-        // Update existing prescription
-        result = updatePrescriptionByPatientId(
-          prescriptionData.patientId,
-          prescriptionData
-        );
-        console.log("Prescription updated:", result);
-        toast.success(
-          `Prescription updated successfully for ${prescriptionData.patientName}!`,
-          {
-            duration: 4000,
-            position: "top-center",
-          }
-        );
-      } else {
-        // Add new prescription
-        result = addPrescription(prescriptionData);
-        console.log("New prescription added:", result);
-        toast.success(
-          `Prescription created successfully for ${prescriptionData.patientName}!`,
-          {
-            duration: 4000,
-            position: "top-center",
-          }
-        );
-      }
+      // Reload appointments to get updated data
+      await loadAppointments();
 
-      // Update patient status to completed
-      handleStatusChange(prescriptionData.patientId, "Completed");
       handleClosePrescription();
     } catch (error) {
       console.error("Error saving prescription:", error);
-      toast.error("Failed to save prescription. Please try again.", {
-        duration: 4000,
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Failed to save prescription. Please try again.";
+
+      toast.error(errorMessage, {
+        duration: 5000,
         position: "top-center",
       });
     }
@@ -118,6 +219,17 @@ const Doctor = () => {
     (p) => p.age > 20 && p.age <= 35
   ).length;
   const countAbove35 = filteredAppointments.filter((p) => p.age > 35).length;
+
+  if (isLoading) {
+    return (
+      <Loading
+        type="medical"
+        message="Loading appointments..."
+        fullScreen={true}
+        size="xl"
+      />
+    );
+  }
 
   return (
     <div className="container-fluid">
@@ -189,34 +301,63 @@ const Doctor = () => {
         </div>
       </div>
 
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-      >
-        <AnimatePresence mode="sync">
-          {filteredAppointments.map((patient) => (
-            <motion.div
-              key={patient.id}
-              variants={cardVariants}
-              exit="exit"
-              layout
-              transition={{ duration: 0.4 }}
+      {filteredAppointments.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <PatientCard
-                patient={patient}
-                onStatusChange={handleStatusChange}
-                onPrescribe={handlePrescribe}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-600 mb-2">
+            No appointments found
+          </h3>
+          <p className="text-gray-500">
+            {filter
+              ? `No ${filter.toLowerCase()} appointments`
+              : "No appointments available"}
+          </p>
+        </div>
+      ) : (
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <AnimatePresence mode="sync">
+            {filteredAppointments.map((patient) => (
+              <motion.div
+                key={patient.id}
+                variants={cardVariants}
+                exit="exit"
+                layout
+                transition={{ duration: 0.4 }}
+              >
+                <PatientCard
+                  patient={patient}
+                  onStatusChange={handleStatusChange}
+                  onPrescribe={handlePrescribe}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      )}
       <AnimatePresence>
         {showPrescriptionForm && selectedPatient && (
           <PrescriptionForm
             patient={selectedPatient}
+            prescription={selectedPatient.existingPrescription}
             onClose={handleClosePrescription}
             onSave={handleSavePrescription}
           />
