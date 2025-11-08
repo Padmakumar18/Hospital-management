@@ -56,4 +56,29 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/pending-verification")
+    public ResponseEntity<List<User>> getPendingUsers() {
+        return ResponseEntity.ok(userService.getPendingVerificationUsers());
+    }
+
+    @PatchMapping("/{email}/verify")
+    public ResponseEntity<User> verifyUser(@PathVariable String email) {
+        try {
+            User verified = userService.verifyUser(email);
+            return ResponseEntity.ok(verified);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @PatchMapping("/{email}/reject")
+    public ResponseEntity<Void> rejectUser(@PathVariable String email) {
+        try {
+            userService.deleteUser(email);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

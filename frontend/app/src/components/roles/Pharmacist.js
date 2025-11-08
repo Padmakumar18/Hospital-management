@@ -33,7 +33,10 @@ const Pharmacist = () => {
       setPrescriptions(prescriptionsWithStatus);
     } catch (error) {
       console.error("Error loading prescriptions:", error);
-      toast.error("Failed to load prescriptions");
+      toast.error("Failed to load prescriptions", {
+        duration: 5000,
+        position: "top-center",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +79,11 @@ const Pharmacist = () => {
     setPrescriptions(updatedPrescriptions);
     setShowDetailModal(false);
     toast.success(
-      `Prescription dispensed for ${selectedPrescription.patientName}`
+      `Prescription dispensed for ${selectedPrescription.patientName}`,
+      {
+        duration: 5000,
+        position: "top-center",
+      }
     );
   };
 

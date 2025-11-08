@@ -38,9 +38,30 @@ const Auth = () => {
     console.log("response from loginFunction:");
     console.log(response);
 
-    if (response) {
+    if (response && response.pendingApproval) {
+      // User account is pending approval
+      toast.error(
+        response.data.message || "Your account is pending admin approval.",
+        {
+          duration: 5000,
+          position: "top-center",
+        }
+      );
+
+      // Redirect to waiting approval page
+      navigate("/waiting-approval", {
+        state: {
+          userEmail: formData.email,
+          userName: formData.name || "User",
+          userRole: "Doctor/Pharmacist",
+        },
+      });
+    } else if (response) {
       const result = response.data;
-      toast.success("Login successful!");
+      toast.success("Login successful!", {
+        duration: 5000,
+        position: "top-center",
+      });
       localStorage.setItem("hsp-email-id", formData.email);
       localStorage.setItem("hsp-password", formData.password);
 
@@ -48,7 +69,10 @@ const Auth = () => {
 
       navigate("/home");
     } else {
-      toast.error("Login failed. Please try again.");
+      toast.error("Login failed. Please try again.", {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 
@@ -64,24 +88,56 @@ const Auth = () => {
       console.log("Signup response:", result);
 
       if (result.success) {
-        toast.success("Signup successful!");
-        localStorage.setItem("hsp-email-id", formData.email);
-        localStorage.setItem("hsp-password", formData.password);
+        // Check if the message indicates pending approval
+        const needsApproval = result.message.includes(
+          "Waiting for admin approval"
+        );
 
-        // Set profile in Redux with the user data
-        const userProfile = {
-          email: formData.email,
-          name: formData.fullName,
-          role: formData.role,
-        };
-        dispatch(setProfile(userProfile));
+        if (needsApproval) {
+          // Doctor or Pharmacist - needs approval
+          toast.success(result.message, {
+            duration: 5000,
+            position: "top-center",
+          });
 
-        clearForm();
-        navigate("/home");
+          clearForm();
+          navigate("/waiting-approval", {
+            state: {
+              userEmail: formData.email,
+              userName: formData.fullName,
+              userRole: formData.role,
+            },
+          });
+        } else {
+          // Patient or Admin - auto-verified
+          toast.success("Signup successful!", {
+            duration: 5000,
+            position: "top-center",
+          });
+
+          localStorage.setItem("hsp-email-id", formData.email);
+          localStorage.setItem("hsp-password", formData.password);
+
+          // Set profile in Redux with the user data
+          const userProfile = {
+            email: formData.email,
+            name: formData.fullName,
+            role: formData.role,
+          };
+          dispatch(setProfile(userProfile));
+
+          clearForm();
+          navigate("/home");
+        }
       }
     } catch (error) {
       console.error("Signup error:", error);
-      toast.error("Signup failed. Please try again.");
+      const errorMessage =
+        error.response?.data?.message || "Signup failed. Please try again.";
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 
@@ -107,7 +163,30 @@ const Auth = () => {
       const autoLogin = async () => {
         try {
           const response = await loginFunction(savedEmail, savedPassword);
-          if (response) {
+
+          if (response && response.pendingApproval) {
+            // User account is pending approval
+            toast.error(
+              response.data.message ||
+                "Your account is pending admin approval.",
+              {
+                duration: 5000,
+                position: "top-center",
+              }
+            );
+
+            // Clear credentials and redirect to waiting approval page
+            localStorage.removeItem("hsp-email-id");
+            localStorage.removeItem("hsp-password");
+
+            navigate("/waiting-approval", {
+              state: {
+                userEmail: savedEmail,
+                userName: "User",
+                userRole: "Doctor/Pharmacist",
+              },
+            });
+          } else if (response && response.data && response.data.success) {
             dispatch(setProfile(response.data.user));
             navigate("/home");
           } else {

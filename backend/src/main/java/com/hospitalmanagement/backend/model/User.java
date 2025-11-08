@@ -22,6 +22,12 @@ public class User {
     @Column(name = "user_role")
     private String role;
 
+    @Column(name = "verified")
+    private boolean verified = false;
+
+    @Column(name = "phone")
+    private String phone;
+
     public UUID getId() {
         return id;
     }
@@ -60,5 +66,21 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

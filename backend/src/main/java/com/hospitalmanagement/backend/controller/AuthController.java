@@ -26,7 +26,7 @@ public class AuthController {
         public String message;
         public User user;
 
-        public LoginResponse(boolean success, String message,User user) {
+        public LoginResponse(boolean success, String message, User user) {
             this.success = success;
             this.message = message;
             this.user = user;
@@ -38,6 +38,7 @@ public class AuthController {
         public String password;
         public String name;
         public String role;
+        public String phone;
     }
 
     static class SignupResponse {
@@ -59,11 +60,30 @@ public class AuthController {
             user.setPassword(signupRequest.password);
             user.setRole(signupRequest.role);
 
-            userService.createUser(user);
+            // Set phone if provided
+            if (signupRequest.phone != null && !signupRequest.phone.isEmpty()) {
+                user.setPhone(signupRequest.phone);
+            }
+
+            // Set verification status based on role
+            // Patients and Admins are auto-verified
+            // Doctors and Pharmacists need admin approval
+            if ("Patient".equals(signupRequest.role) || "Admin".equals(signupRequest.role)) {
+                user.setVerified(true);
+            } else {
+                user.setVerified(false);
+            }
+
+            // Create user and doctor record if role is Doctor
+            userService.createUserWithDoctorRecord(user);
+
+            String message = user.isVerified()
+                    ? "Account created successfully!"
+                    : "Account created! Waiting for admin approval.";
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(new SignupResponse(true, "Account created successfully!"));
+                    .body(new SignupResponse(true, message));
 
         } catch (Exception e) {
             return ResponseEntity
@@ -77,21 +97,31 @@ public class AuthController {
         User user = userService.login(request.email, request.password);
 
         System.out.println("-------------------");
-        System.out.println(user.getEmail());
-        System.out.println(user.getPassword());
-        System.out.println(user.getRole());
+        System.out.println("Login attempt for: " + request.email);
+        System.out.println("User found: " + (user != null));
+        if (user != null) {
+            System.out.println("User verified: " + user.isVerified());
+            System.out.println("User role: " + user.getRole());
+        }
         System.out.println("-------------------");
-        System.out.println(request.email);
-        System.out.println(request.password);
 
-        if (user != null && user.getEmail().equals(request.email) && user.getPassword().equals(request.password)) {
+        if (user != null) {
+            // Check if user is verified (for Doctor and Pharmacist)
+            if (!user.isVerified() && ("Doctor".equals(user.getRole()) || "Pharmacist".equals(user.getRole()))) {
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(new LoginResponse(false,
+                                "Your account is pending admin approval. Please wait for verification.", null));
+            }
+
+            // Password verification is done in UserService using BCrypt
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(new LoginResponse(true, "Login successful!",user));
+                    .body(new LoginResponse(true, "Login successful!", user));
         } else {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(new LoginResponse(false, "Invalid username or password",null));
+                    .body(new LoginResponse(false, "Invalid username or password", null));
         }
     }
 }

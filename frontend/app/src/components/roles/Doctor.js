@@ -29,12 +29,26 @@ const Doctor = () => {
   const loadAppointments = async () => {
     try {
       setIsLoading(true);
-      // Get all appointments for now (can filter by doctor ID later)
+      // Get all appointments
       const response = await appointmentAPI.getAll();
-      setAppointmentData(response.data);
+
+      // Filter to show only this doctor's appointments
+      const doctorAppointments = response.data.filter(
+        (apt) =>
+          apt.doctorName === profile?.name || apt.doctorId === profile?.email
+      );
+
+      console.log("Total appointments:", response.data.length);
+      console.log("Doctor's appointments:", doctorAppointments.length);
+      console.log("Filtering by doctor:", profile?.name, profile?.email);
+
+      setAppointmentData(doctorAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments");
+      toast.error("Failed to load appointments", {
+        duration: 5000,
+        position: "top-center",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -50,17 +64,64 @@ const Doctor = () => {
       setAppointmentData((prev) =>
         prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
       );
-      toast.success(`Appointment status updated to ${newStatus}`);
+      toast.success(`Appointment status updated to ${newStatus}`, {
+        duration: 5000,
+        position: "top-center",
+      });
     } catch (error) {
       console.error("Error updating status:", error);
-      toast.error("Failed to update appointment status");
+      toast.error("Failed to update appointment status", {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 
-  const handlePrescribe = (patient) => {
-    // console.log("patient");
-    // console.log(patient);
+  const handlePrescribe = async (patient) => {
+    console.log("handlePrescribe - patient:", patient);
     setSelectedPatient(patient);
+
+    // If appointment is completed and has prescription, load it for viewing/editing
+    if (patient.status === "Completed" && patient.prescriptionGiven) {
+      try {
+        console.log("Loading existing prescription for:", patient.patientName);
+        const response = await prescriptionAPI.getByPatientName(
+          patient.patientName
+        );
+        console.log("Prescription response:", response.data);
+
+        // Handle both array and single object responses
+        let prescriptions = [];
+        if (Array.isArray(response.data)) {
+          prescriptions = response.data;
+        } else if (response.data) {
+          prescriptions = [response.data];
+        }
+
+        if (prescriptions.length > 0) {
+          // Find prescription matching this appointment date
+          const matchingPrescription =
+            prescriptions.find(
+              (p) =>
+                new Date(p.createdDate).toDateString() ===
+                new Date(patient.appointmentDate).toDateString()
+            ) || prescriptions[0];
+
+          console.log("Found prescription:", matchingPrescription);
+          setSelectedPatient({
+            ...patient,
+            existingPrescription: matchingPrescription,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading prescription:", error);
+        toast.error("Failed to load prescription", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
+    }
+
     setShowPrescriptionForm(true);
   };
 
@@ -109,7 +170,7 @@ const Doctor = () => {
       toast.success(
         `Prescription created successfully for ${prescriptionData.patientName}!`,
         {
-          duration: 4000,
+          duration: 5000,
           position: "top-center",
         }
       );
@@ -296,6 +357,7 @@ const Doctor = () => {
         {showPrescriptionForm && selectedPatient && (
           <PrescriptionForm
             patient={selectedPatient}
+            prescription={selectedPatient.existingPrescription}
             onClose={handleClosePrescription}
             onSave={handleSavePrescription}
           />

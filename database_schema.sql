@@ -14,12 +14,20 @@ CREATE TABLE IF NOT EXISTS users (
     user_email VARCHAR(255) UNIQUE NOT NULL,
     user_password VARCHAR(255) NOT NULL,
     user_name VARCHAR(255) NOT NULL,
-    user_role VARCHAR(50) NOT NULL CHECK (user_role IN ('Doctor', 'Patient', 'Pharmacist', 'Admin'))
+    user_role VARCHAR(50) NOT NULL CHECK (user_role IN ('Doctor', 'Patient', 'Pharmacist', 'Admin')),
+    verified BOOLEAN DEFAULT FALSE,
+    phone VARCHAR(50),
+    specialization VARCHAR(255),
+    department VARCHAR(255),
+    experience_years INTEGER,
+    qualification VARCHAR(500),
+    license_number VARCHAR(100)
 );
 
--- Create index for faster email lookups
+-- Create indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(user_email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(user_role);
+CREATE INDEX IF NOT EXISTS idx_users_verified ON users(verified);
 
 -- ============================================
 -- 2. APPOINTMENTS TABLE

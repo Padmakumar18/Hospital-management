@@ -40,7 +40,10 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
       setAllDoctors(doctorResponse.data || []);
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Failed to load departments and doctors");
+      toast.error("Failed to load departments and doctors", {
+        duration: 5000,
+        position: "top-center",
+      });
     } finally {
       setIsLoadingData(false);
     }

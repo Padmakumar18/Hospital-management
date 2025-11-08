@@ -28,12 +28,33 @@ const Admin = () => {
         appointmentAPI.getAll(),
         prescriptionAPI.getAll(),
       ]);
-      setUsers(usersRes.data || []);
-      setAppointments(appointmentsRes.data || []);
-      setPrescriptions(prescriptionsRes.data || []);
+
+      // Ensure all data is an array
+      const usersData = Array.isArray(usersRes.data) ? usersRes.data : [];
+      const appointmentsData = Array.isArray(appointmentsRes.data)
+        ? appointmentsRes.data
+        : [];
+      const prescriptionsData = Array.isArray(prescriptionsRes.data)
+        ? prescriptionsRes.data
+        : [];
+
+      console.log("Admin - Users loaded:", usersData.length);
+      console.log("Admin - Appointments loaded:", appointmentsData.length);
+      console.log("Admin - Prescriptions loaded:", prescriptionsData.length);
+
+      setUsers(usersData);
+      setAppointments(appointmentsData);
+      setPrescriptions(prescriptionsData);
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Failed to load data");
+      toast.error("Failed to load data", {
+        duration: 5000,
+        position: "top-center",
+      });
+      // Set empty arrays on error
+      setUsers([]);
+      setAppointments([]);
+      setPrescriptions([]);
     } finally {
       setIsLoading(false);
     }
@@ -71,10 +92,16 @@ const Admin = () => {
                 try {
                   await userAPI.delete(userEmail);
                   toast.dismiss(t.id);
-                  toast.success("User deleted successfully!");
+                  toast.success("User deleted successfully!", {
+                    duration: 5000,
+                    position: "top-center",
+                  });
                   await loadAllData();
                 } catch (error) {
-                  toast.error("Failed to delete user");
+                  toast.error("Failed to delete user", {
+                    duration: 5000,
+                    position: "top-center",
+                  });
                 }
               }}
               className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
@@ -102,11 +129,17 @@ const Admin = () => {
       await userAPI.update(userData.email, userData);
       setShowUserModal(false);
       setSelectedUser(null);
-      toast.success("User updated successfully!");
+      toast.success("User updated successfully!", {
+        duration: 5000,
+        position: "top-center",
+      });
       await loadAllData();
     } catch (error) {
       console.error("Error updating user:", error);
-      toast.error("Failed to update user");
+      toast.error("Failed to update user", {
+        duration: 5000,
+        position: "top-center",
+      });
     }
   };
 

@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import Auth from "./components/Auth";
 import Home from "./components/Home";
 import ErrorPage from "./components/ErrorPage";
+import WaitingApproval from "./components/WaitingApproval";
 // import { handleLogin } from "./components/services/AuthService";
 import ProtectedRoute from "./components/services/ProtectedRoute";
 
@@ -40,6 +41,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/auth" replace />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/waiting-approval" element={<WaitingApproval />} />
       <Route
         path="/home"
         element={

@@ -40,7 +40,10 @@ const Patient = () => {
       calculateStats(patientAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments");
+      toast.error("Failed to load appointments", {
+        duration: 5000,
+        position: "top-center",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +103,7 @@ const Patient = () => {
       toast.success(
         `Appointment booked successfully for ${appointmentData.appointmentDate} at ${appointmentData.appointmentTime}`,
         {
-          duration: 4000,
+          duration: 5000,
           position: "top-center",
         }
       );
@@ -112,7 +115,11 @@ const Patient = () => {
       console.error("Error details:", error.response?.data);
       toast.error(
         error.response?.data?.message ||
-          "Failed to book appointment. Please try again."
+          "Failed to book appointment. Please try again.",
+        {
+          duration: 5000,
+          position: "top-center",
+        }
       );
     }
   };
@@ -193,14 +200,17 @@ const Patient = () => {
 
                   toast.dismiss(t.id);
                   toast.success("Appointment cancelled successfully", {
-                    duration: 3000,
+                    duration: 5000,
                     position: "top-center",
                   });
 
                   await loadAppointments(); // Reload appointments
                 } catch (error) {
                   console.error("Error cancelling appointment:", error);
-                  toast.error("Failed to cancel appointment");
+                  toast.error("Failed to cancel appointment", {
+                    duration: 5000,
+                    position: "top-center",
+                  });
                 }
               }}
               className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
@@ -234,15 +244,25 @@ const Patient = () => {
       );
 
       console.log("Prescription response:", response.data);
+      console.log("Response type:", typeof response.data);
+      console.log("Is array:", Array.isArray(response.data));
 
-      if (response.data && response.data.length > 0) {
+      // Handle both array and single object responses
+      let prescriptions = [];
+      if (Array.isArray(response.data)) {
+        prescriptions = response.data;
+      } else if (response.data) {
+        prescriptions = [response.data];
+      }
+
+      if (prescriptions.length > 0) {
         // Find the most recent prescription or one matching the appointment date
         const matchingPrescription =
-          response.data.find(
+          prescriptions.find(
             (p) =>
               new Date(p.createdDate).toDateString() ===
               new Date(appointment.appointmentDate).toDateString()
-          ) || response.data[0];
+          ) || prescriptions[0];
 
         console.log("Selected prescription:", matchingPrescription);
 
@@ -252,7 +272,7 @@ const Patient = () => {
       } else {
         console.log("No prescriptions found");
         toast.error("No prescription found for this appointment.", {
-          duration: 3000,
+          duration: 5000,
           position: "top-center",
         });
       }
@@ -261,7 +281,11 @@ const Patient = () => {
       console.error("Error details:", error.response?.data);
       toast.error(
         "Failed to load prescription: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
+        {
+          duration: 5000,
+          position: "top-center",
+        }
       );
     }
   };
