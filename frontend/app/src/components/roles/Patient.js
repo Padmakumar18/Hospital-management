@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { appointmentAPI, prescriptionAPI } from "../../services/api";
 import AppointmentBookingForm from "./components/patient/AppointmentBookingForm";
 import PrescriptionView from "./components/patient/PrescriptionView";
 import Loading, { LoadingOverlay, SearchLoading, useLoading } from "../Loading";
-import {
-  getPatientAppointments,
-  getUpcomingAppointments,
-  getPastAppointments,
-  getPatientStats,
-} from "../mockData/patient/Appointments";
-import { getPrescriptionByPatientName } from "../mockData/Prescription";
 import "./styles/Patient.css";
 
 const Patient = () => {
+  const profile = useSelector((state) => state.profile.profile);
   const [appointments, setAppointments] = useState([]);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
@@ -25,33 +21,100 @@ const Patient = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { loading: prescriptionLoading, withLoading } = useLoading();
 
-  // Need to write a function to get a user details using mail , pass
   useEffect(() => {
-    const loadData = async () => {
+    if (profile) {
+      loadAppointments();
+    }
+  }, [profile]);
+
+  const loadAppointments = async () => {
+    try {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const mockAppointments = getPatientAppointments("John Smith");
-      const patientStats = getPatientStats("John Smith");
-      console.log("patientStats");
-      console.log(patientStats);
-      setAppointments(mockAppointments);
-      setStats(patientStats);
+      // Get all appointments (can filter by patient email/ID later)
+      const response = await appointmentAPI.getAll();
+      const patientAppointments = response.data.filter(
+        (apt) =>
+          apt.patientName === profile?.name || apt.patientId === profile?.email
+      );
+      setAppointments(patientAppointments);
+      calculateStats(patientAppointments);
+    } catch (error) {
+      console.error("Error loading appointments:", error);
+      toast.error("Failed to load appointments");
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const calculateStats = (appointments) => {
+    const stats = {
+      total: appointments.length,
+      scheduled: appointments.filter((a) => a.status === "Scheduled").length,
+      completed: appointments.filter((a) => a.status === "Completed").length,
+      withPrescription: appointments.filter((a) => a.prescriptionGiven).length,
     };
+    setStats(stats);
+  };
 
-    loadData();
-  }, []);
+  const handleBookAppointment = async (appointmentData) => {
+    try {
+      // Convert time from "09:00 AM" format to "09:00:00" format
+      const convertTimeTo24Hour = (time12h) => {
+        const [time, modifier] = time12h.split(" ");
+        let [hours, minutes] = time.split(":");
 
-  const handleBookAppointment = (appointmentData) => {
-    setAppointments((prev) => [...prev, appointmentData]);
-    toast.success(
-      `Appointment booked successfully for ${appointmentData.appointmentDate} at ${appointmentData.appointmentTime}`,
-      {
-        duration: 4000,
-        position: "top-center",
-      }
-    );
-    setShowBookingForm(false);
+        if (hours === "12") {
+          hours = "00";
+        }
+
+        if (modifier === "PM") {
+          hours = parseInt(hours, 10) + 12;
+        }
+
+        return `${hours.toString().padStart(2, "0")}:${minutes}:00`;
+      };
+
+      // Map form fields to backend expected fields
+      const newAppointment = {
+        patientId: profile?.email || appointmentData.patientId,
+        doctorId: appointmentData.doctor, // Using doctor name as ID for now
+        patientName: profile?.name || appointmentData.patientName,
+        doctorName: appointmentData.doctor,
+        age: parseInt(appointmentData.age),
+        gender: appointmentData.gender,
+        contactNumber: appointmentData.contact,
+        department: appointmentData.department,
+        appointmentDate: appointmentData.appointmentDate,
+        appointmentTime: convertTimeTo24Hour(appointmentData.appointmentTime),
+        status: "Scheduled",
+        reason: appointmentData.reason,
+        issueDays: parseInt(appointmentData.issueDays),
+        prescriptionGiven: false,
+        followUpRequired: false,
+      };
+
+      console.log("Sending appointment data:", newAppointment);
+
+      await appointmentAPI.create(newAppointment);
+
+      toast.success(
+        `Appointment booked successfully for ${appointmentData.appointmentDate} at ${appointmentData.appointmentTime}`,
+        {
+          duration: 4000,
+          position: "top-center",
+        }
+      );
+
+      setShowBookingForm(false);
+      await loadAppointments(); // Reload to get updated list
+    } catch (error) {
+      console.error("Error booking appointment:", error);
+      console.error("Error details:", error.response?.data);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to book appointment. Please try again."
+      );
+    }
   };
 
   const handleCancelBooking = () => {
@@ -59,11 +122,22 @@ const Patient = () => {
   };
 
   const getFilteredAppointments = () => {
+    const now = new Date();
     switch (activeTab) {
       case "upcoming":
-        return getUpcomingAppointments("John Smith");
+        return appointments.filter((apt) => {
+          const aptDate = new Date(apt.appointmentDate);
+          return aptDate >= now && apt.status === "Scheduled";
+        });
       case "past":
-        return getPastAppointments("John Smith");
+        return appointments.filter((apt) => {
+          const aptDate = new Date(apt.appointmentDate);
+          return (
+            aptDate < now ||
+            apt.status === "Completed" ||
+            apt.status === "Cancelled"
+          );
+        });
       default:
         return appointments;
     }
@@ -105,27 +179,25 @@ const Patient = () => {
           </p>
           <div className="flex space-x-2">
             <button
-              onClick={() => {
-                setAppointments((prev) =>
-                  prev.map((apt) =>
-                    apt.id === appointmentId
-                      ? {
-                          ...apt,
-                          status: "Cancelled",
-                          cancellationReason: "Cancelled by patient",
-                        }
-                      : apt
-                  )
-                );
+              onClick={async () => {
+                try {
+                  await appointmentAPI.updateStatus(
+                    appointmentId,
+                    "Cancelled",
+                    "Cancelled by patient"
+                  );
 
-                const newStats = getPatientStats("John Smith");
-                setStats(newStats);
+                  toast.dismiss(t.id);
+                  toast.success("Appointment cancelled successfully", {
+                    duration: 3000,
+                    position: "top-center",
+                  });
 
-                toast.dismiss(t.id);
-                toast.success("Appointment cancelled successfully", {
-                  duration: 3000,
-                  position: "top-center",
-                });
+                  await loadAppointments(); // Reload appointments
+                } catch (error) {
+                  console.error("Error cancelling appointment:", error);
+                  toast.error("Failed to cancel appointment");
+                }
               }}
               className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
             >
@@ -150,33 +222,33 @@ const Patient = () => {
   // Handle view prescription
   const handleViewPrescription = (appointment) => {
     withLoading(async () => {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      try {
+        // Get prescriptions for this patient
+        const response = await prescriptionAPI.getByPatientName(
+          appointment.patientName
+        );
 
-      // Get the prescription data for this appointment
-      const prescriptionData = getPrescriptionByPatientName(
-        appointment.patientName || "John Smith"
-      );
-
-      if (prescriptionData && prescriptionData.length > 0) {
-        // Find the prescription that matches this appointment or get the most recent one
-        const matchingPrescription =
-          prescriptionData.find(
-            (p) =>
-              p.appointmentId === appointment.id ||
-              new Date(p.date).toDateString() ===
+        if (response.data && response.data.length > 0) {
+          // Find the most recent prescription or one matching the appointment date
+          const matchingPrescription =
+            response.data.find(
+              (p) =>
+                new Date(p.createdDate).toDateString() ===
                 new Date(appointment.appointmentDate).toDateString()
-          ) || prescriptionData[0]; // Fallback to first prescription if no exact match
+            ) || response.data[0];
 
-        setSelectedPrescription(matchingPrescription);
-        setSelectedAppointment(appointment);
-        setShowPrescriptionModal(true);
-      } else {
-        // Show a message if no prescription is found
-        toast.error("No prescription found for this appointment.", {
-          duration: 3000,
-          position: "top-center",
-        });
+          setSelectedPrescription(matchingPrescription);
+          setSelectedAppointment(appointment);
+          setShowPrescriptionModal(true);
+        } else {
+          toast.error("No prescription found for this appointment.", {
+            duration: 3000,
+            position: "top-center",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading prescription:", error);
+        toast.error("Failed to load prescription");
       }
     });
   };

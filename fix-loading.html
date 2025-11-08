@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fix Loading Issue - Hospital Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        background: white;
+        color: #333;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        color: #667eea;
+        margin-top: 0;
+      }
+      button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 10px 5px;
+        transition: background 0.3s;
+      }
+      button:hover {
+        background: #764ba2;
+      }
+      .success {
+        background: #10b981;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        display: none;
+      }
+      .info {
+        background: #f3f4f6;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        border-left: 4px solid #667eea;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: "Courier New", monospace;
+      }
+      .step {
+        margin: 15px 0;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔧 Fix Loading Issue</h1>
+
+      <div class="info">
+        <strong>Issue:</strong> Frontend stuck in loading state<br />
+        <strong>Solution:</strong> Clear browser cache and localStorage
+      </div>
+
+      <div class="success" id="successMsg">
+        ✅ localStorage cleared successfully! Refresh the page to continue.
+      </div>
+
+      <h2>Quick Fix</h2>
+      <button onclick="clearStorage()">🗑️ Clear localStorage</button>
+      <button onclick="clearAndReload()">🔄 Clear & Reload</button>
+      <button onclick="openApp()">🚀 Open App</button>
+
+      <h2>Manual Steps</h2>
+
+      <div class="step">
+        <strong>Step 1: Clear localStorage</strong>
+        <p>Open browser console (F12) and run:</p>
+        <code>localStorage.clear()</code>
+      </div>
+
+      <div class="step">
+        <strong>Step 2: Clear Browser Cache</strong>
+        <p>Press <code>Ctrl + Shift + Delete</code> and clear:</p>
+        <ul>
+          <li>Cached images and files</li>
+          <li>Cookies and site data</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <strong>Step 3: Refresh</strong>
+        <p>Press <code>Ctrl + R</code> or <code>F5</code></p>
+      </div>
+
+      <h2>What Was Fixed</h2>
+      <ul>
+        <li>✅ Fixed infinite loop in auto-login</li>
+        <li>✅ Added proper loading state</li>
+        <li>✅ Added error handling</li>
+        <li>✅ Improved useEffect dependencies</li>
+      </ul>
+
+      <h2>Expected Behavior</h2>
+      <ul>
+        <li>✅ Login page loads immediately</li>
+        <li>✅ Auto-login works (if credentials saved)</li>
+        <li>✅ No infinite loading</li>
+        <li>✅ Proper error handling</li>
+      </ul>
+
+      <div class="info">
+        <strong>Note:</strong> If you still see loading, try opening in an
+        incognito/private window.
+      </div>
+    </div>
+
+    <script>
+      function clearStorage() {
+        try {
+          localStorage.clear();
+          document.getElementById("successMsg").style.display = "block";
+          console.log("✅ localStorage cleared");
+        } catch (e) {
+          alert("Error clearing localStorage: " + e.message);
+        }
+      }
+
+      function clearAndReload() {
+        clearStorage();
+        setTimeout(() => {
+          window.location.href = "http://localhost:3000";
+        }, 1000);
+      }
+
+      function openApp() {
+        window.open("http://localhost:3000", "_blank");
+      }
+
+      // Auto-check if we're on localhost:3000
+      if (
+        window.location.hostname === "localhost" &&
+        window.location.port === "3000"
+      ) {
+        console.log("Running on app - clearing localStorage...");
+        clearStorage();
+      }
+    </script>
+  </body>
+</html>

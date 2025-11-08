@@ -17,6 +17,7 @@ const Auth = () => {
 
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [isAutoLogging, setIsAutoLogging] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -42,11 +43,10 @@ const Auth = () => {
       toast.success("Login successful!");
       localStorage.setItem("hsp-email-id", formData.email);
       localStorage.setItem("hsp-password", formData.password);
-      // clearForm();
 
       dispatch(setProfile(result.user));
 
-      // navigate("/home");
+      navigate("/home");
     } else {
       toast.error("Login failed. Please try again.");
     }
@@ -64,15 +64,23 @@ const Auth = () => {
       console.log("Signup response:", result);
 
       if (result.success) {
-        toast.success("Singup successful !");
+        toast.success("Signup successful!");
         localStorage.setItem("hsp-email-id", formData.email);
         localStorage.setItem("hsp-password", formData.password);
-        clearForm();
 
+        // Set profile in Redux with the user data
+        const userProfile = {
+          email: formData.email,
+          name: formData.fullName,
+          role: formData.role,
+        };
+        dispatch(setProfile(userProfile));
+
+        clearForm();
         navigate("/home");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Signup error:", error);
       toast.error("Signup failed. Please try again.");
     }
   };
@@ -96,23 +104,31 @@ const Auth = () => {
     const savedPassword = localStorage.getItem("hsp-password");
 
     if (savedEmail && savedPassword) {
-      formData.email = savedEmail;
-      formData.password = savedPassword;
-      loginFunction();
-
-      console.log("Auto login with:", {
-        email: savedEmail,
-        password: savedPassword,
-      });
-
-      setFormData((prev) => ({
-        ...prev,
-        email: savedEmail,
-        password: savedPassword,
-      }));
-      navigate("/home"); // auto navigate
+      const autoLogin = async () => {
+        try {
+          const response = await loginFunction(savedEmail, savedPassword);
+          if (response) {
+            dispatch(setProfile(response.data.user));
+            navigate("/home");
+          } else {
+            // Clear invalid credentials
+            localStorage.removeItem("hsp-email-id");
+            localStorage.removeItem("hsp-password");
+          }
+        } catch (error) {
+          console.error("Auto-login failed:", error);
+          // Clear invalid credentials
+          localStorage.removeItem("hsp-email-id");
+          localStorage.removeItem("hsp-password");
+        } finally {
+          setIsAutoLogging(false);
+        }
+      };
+      autoLogin();
+    } else {
+      setIsAutoLogging(false);
     }
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
@@ -162,6 +178,18 @@ const Auth = () => {
       role: "",
     });
   };
+
+  // Show loading while checking auto-login
+  if (isAutoLogging) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">

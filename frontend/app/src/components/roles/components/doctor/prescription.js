@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPrescriptionByPatientId } from "../../../mockData/Prescription";
 
 const PrescriptionForm = ({ patient, onClose, onSave }) => {
   // console.log("patient");
@@ -32,56 +31,16 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Initialize form with patient data
   useEffect(() => {
-    if (patient && patient.status === "Completed") {
-      const existingPrescriptions = getPrescriptionByPatientId(patient.id);
-      // console.log("existingPrescriptions");
-      // console.log(existingPrescriptions);
-      if (existingPrescriptions && existingPrescriptions.length > 0) {
-        // Get the most recent prescription (first one in the array)
-        const existingPrescription = existingPrescriptions[0];
-
-        // Handle both old and new data structures
-        const sanitizedPrescription = {
-          patientId: existingPrescription.patientId || "",
-          patientName: existingPrescription.patientName || "",
-          age: existingPrescription.age || "",
-          gender: existingPrescription.gender || "",
-          diagnosis: existingPrescription.diagnosis || "",
-          symptoms: existingPrescription.symptoms || "",
-          // Handle both additionalNotes (new) and instructions (old)
-          additionalNotes:
-            existingPrescription.additionalNotes ||
-            existingPrescription.instructions ||
-            "",
-          // Handle both followUpDate (new) and followUp (old)
-          followUpDate:
-            existingPrescription.followUpDate ||
-            existingPrescription.followUp ||
-            "",
-          doctorName: existingPrescription.doctorName || "Dr. [Doctor Name]",
-          prescriptionDate:
-            existingPrescription.prescriptionDate ||
-            existingPrescription.date ||
-            new Date().toISOString().split("T")[0],
-          medicines:
-            existingPrescription.medicines?.map((medicine) => ({
-              id: medicine.id || 1,
-              // Handle both medicineName (new) and name (old)
-              medicineName: medicine.medicineName || medicine.name || "",
-              dosage: medicine.dosage || "",
-              frequency: medicine.frequency || "",
-              duration: medicine.duration || "",
-              instructions: medicine.instructions || "",
-              quantity: medicine.quantity || "",
-            })) || [],
-        };
-
-        // console.log("sanitizedPrescription");
-        // console.log(sanitizedPrescription);
-        setPrescriptionData(sanitizedPrescription);
-        setIsEditMode(true);
-      }
+    if (patient) {
+      setPrescriptionData((prev) => ({
+        ...prev,
+        patientId: patient.id || "",
+        patientName: patient.patientName || "",
+        age: patient.age || "",
+        gender: patient.gender || "",
+      }));
     }
   }, [patient]);
 

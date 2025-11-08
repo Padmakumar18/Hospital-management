@@ -1,37 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { appointmentAPI, prescriptionAPI } from "../../services/api";
 
-import { appointments as initialAppointments } from "../mockData/doctor/PatientAppointments";
-
-import PatientCard from "./components/doctor/PatientCard"; // Cards ( patient details )
-import PrescriptionForm from "./components/doctor/Prescription"; // To give prescribe to patient ( Form )
-import {
-  addPrescription,
-  updatePrescriptionByPatientId,
-  getPrescriptionByPatientId,
-} from "../mockData/Prescription";
-import AgeDistribution from "./components/doctor/AgeDistribution"; // This is for graph
-import LoadingExamples from "../examples/LoadingExamples";
+import PatientCard from "./components/doctor/PatientCard";
+import PrescriptionForm from "./components/doctor/Prescription";
+import AgeDistribution from "./components/doctor/AgeDistribution";
+import Loading from "../Loading";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 import "./styles/Doctor.css";
 
 const Doctor = () => {
+  const profile = useSelector((state) => state.profile.profile);
   const [filter, setFilter] = useState("");
-  const [appointmentData, setAppointmentData] = useState(initialAppointments);
+  const [appointmentData, setAppointmentData] = useState([]);
   const [showGraph, setShowGraph] = useState(false);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load appointments on component mount
+  useEffect(() => {
+    loadAppointments();
+  }, [profile]);
+
+  const loadAppointments = async () => {
+    try {
+      setIsLoading(true);
+      // Get all appointments for now (can filter by doctor ID later)
+      const response = await appointmentAPI.getAll();
+      setAppointmentData(response.data);
+    } catch (error) {
+      console.error("Error loading appointments:", error);
+      toast.error("Failed to load appointments");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setAppointmentData((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-    );
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await appointmentAPI.updateStatus(id, newStatus);
+      setAppointmentData((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+      );
+      toast.success(`Appointment status updated to ${newStatus}`);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update appointment status");
+    }
   };
 
   const handlePrescribe = (patient) => {
@@ -46,45 +69,27 @@ const Doctor = () => {
     setSelectedPatient(null);
   };
 
-  const handleSavePrescription = (prescriptionData) => {
+  const handleSavePrescription = async (prescriptionData) => {
     console.log("Prescription data to save:", prescriptionData);
 
     try {
-      // Check if prescription already exists for this patient
-      const existingPrescriptions = getPrescriptionByPatientId(
-        prescriptionData.patientId
+      // Create prescription via API
+      await prescriptionAPI.create(prescriptionData);
+
+      toast.success(
+        `Prescription created successfully for ${prescriptionData.patientName}!`,
+        {
+          duration: 4000,
+          position: "top-center",
+        }
       );
 
-      let result;
-      if (existingPrescriptions && existingPrescriptions.length > 0) {
-        // Update existing prescription
-        result = updatePrescriptionByPatientId(
-          prescriptionData.patientId,
-          prescriptionData
-        );
-        console.log("Prescription updated:", result);
-        toast.success(
-          `Prescription updated successfully for ${prescriptionData.patientName}!`,
-          {
-            duration: 4000,
-            position: "top-center",
-          }
-        );
-      } else {
-        // Add new prescription
-        result = addPrescription(prescriptionData);
-        console.log("New prescription added:", result);
-        toast.success(
-          `Prescription created successfully for ${prescriptionData.patientName}!`,
-          {
-            duration: 4000,
-            position: "top-center",
-          }
-        );
-      }
+      // Update appointment status to completed
+      await handleStatusChange(selectedPatient.id, "Completed");
 
-      // Update patient status to completed
-      handleStatusChange(prescriptionData.patientId, "Completed");
+      // Reload appointments to get updated data
+      await loadAppointments();
+
       handleClosePrescription();
     } catch (error) {
       console.error("Error saving prescription:", error);
@@ -118,6 +123,17 @@ const Doctor = () => {
     (p) => p.age > 20 && p.age <= 35
   ).length;
   const countAbove35 = filteredAppointments.filter((p) => p.age > 35).length;
+
+  if (isLoading) {
+    return (
+      <Loading
+        type="medical"
+        message="Loading appointments..."
+        fullScreen={true}
+        size="xl"
+      />
+    );
+  }
 
   return (
     <div className="container-fluid">
@@ -189,30 +205,58 @@ const Doctor = () => {
         </div>
       </div>
 
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-      >
-        <AnimatePresence mode="sync">
-          {filteredAppointments.map((patient) => (
-            <motion.div
-              key={patient.id}
-              variants={cardVariants}
-              exit="exit"
-              layout
-              transition={{ duration: 0.4 }}
+      {filteredAppointments.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <PatientCard
-                patient={patient}
-                onStatusChange={handleStatusChange}
-                onPrescribe={handlePrescribe}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-600 mb-2">
+            No appointments found
+          </h3>
+          <p className="text-gray-500">
+            {filter
+              ? `No ${filter.toLowerCase()} appointments`
+              : "No appointments available"}
+          </p>
+        </div>
+      ) : (
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <AnimatePresence mode="sync">
+            {filteredAppointments.map((patient) => (
+              <motion.div
+                key={patient.id}
+                variants={cardVariants}
+                exit="exit"
+                layout
+                transition={{ duration: 0.4 }}
+              >
+                <PatientCard
+                  patient={patient}
+                  onStatusChange={handleStatusChange}
+                  onPrescribe={handlePrescribe}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      )}
       <AnimatePresence>
         {showPrescriptionForm && selectedPatient && (
           <PrescriptionForm
