@@ -73,8 +73,38 @@ const Doctor = () => {
     console.log("Prescription data to save:", prescriptionData);
 
     try {
+      // Prepare prescription data with doctor info
+      const prescriptionToSave = {
+        ...prescriptionData,
+        doctorId: profile?.email || "",
+        doctorName: profile?.name || "Dr. Unknown",
+        // Map instructions to instruction (singular) for backend
+        medicines: prescriptionData.medicines.map((med) => ({
+          medicineName: med.medicineName,
+          dosage: med.dosage,
+          frequency: med.frequency,
+          duration: med.duration,
+          instruction: med.instructions || "", // Map instructions to instruction
+          quantity: med.quantity,
+        })),
+      };
+
+      console.log("Sending prescription to backend:", prescriptionToSave);
+
       // Create prescription via API
-      await prescriptionAPI.create(prescriptionData);
+      const response = await prescriptionAPI.create(prescriptionToSave);
+      console.log("Prescription created successfully:", response.data);
+
+      // Update appointment: mark as completed and prescription given
+      const updatedAppointment = {
+        ...selectedPatient,
+        status: "Completed",
+        prescriptionGiven: true,
+        followUpRequired: prescriptionToSave.followUpDate ? true : false,
+        followUpDate: prescriptionToSave.followUpDate || null,
+      };
+
+      await appointmentAPI.update(selectedPatient.id, updatedAppointment);
 
       toast.success(
         `Prescription created successfully for ${prescriptionData.patientName}!`,
@@ -84,17 +114,22 @@ const Doctor = () => {
         }
       );
 
-      // Update appointment status to completed
-      await handleStatusChange(selectedPatient.id, "Completed");
-
       // Reload appointments to get updated data
       await loadAppointments();
 
       handleClosePrescription();
     } catch (error) {
       console.error("Error saving prescription:", error);
-      toast.error("Failed to save prescription. Please try again.", {
-        duration: 4000,
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Failed to save prescription. Please try again.";
+
+      toast.error(errorMessage, {
+        duration: 5000,
         position: "top-center",
       });
     }

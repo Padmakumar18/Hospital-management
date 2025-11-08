@@ -20,12 +20,21 @@ public class PrescriptionController {
     }
 
     @PostMapping
-    public ResponseEntity<PrescriptionEntity> createPrescription(@RequestBody PrescriptionEntity prescription) {
+    public ResponseEntity<?> createPrescription(@RequestBody PrescriptionEntity prescription) {
         try {
+            System.out.println("Received prescription request:");
+            System.out.println("Patient: " + prescription.getPatientName());
+            System.out.println("Doctor: " + prescription.getDoctorName());
+            System.out.println("Medicines count: "
+                    + (prescription.getMedicines() != null ? prescription.getMedicines().size() : 0));
+
             PrescriptionEntity created = prescriptionService.createPrescription(prescription);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            System.err.println("Error creating prescription: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error creating prescription: " + e.getMessage());
         }
     }
 

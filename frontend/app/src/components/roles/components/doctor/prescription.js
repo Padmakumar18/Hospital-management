@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const PrescriptionForm = ({ patient, onClose, onSave }) => {
-  // console.log("patient");
-  // console.log(patient);
+const PrescriptionForm = ({ patient, prescription, onClose, onSave }) => {
+  console.log("PrescriptionForm - patient:", patient);
+  console.log("PrescriptionForm - prescription:", prescription);
+
   const [prescriptionData, setPrescriptionData] = useState({
     patientId: patient?.id || "",
     patientName: patient?.patientName || "",
@@ -31,9 +32,50 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Initialize form with patient data
+  // Initialize form with patient data or existing prescription
   useEffect(() => {
-    if (patient) {
+    if (prescription) {
+      // Edit mode - load existing prescription
+      console.log("Loading existing prescription:", prescription);
+      setIsEditMode(true);
+      setPrescriptionData({
+        patientId: prescription.patientId || patient?.id || "",
+        patientName: prescription.patientName || patient?.patientName || "",
+        age: prescription.age || patient?.age || "",
+        gender: prescription.gender || patient?.gender || "",
+        diagnosis: prescription.diagnosis || "",
+        symptoms: prescription.symptoms || "",
+        medicines:
+          prescription.medicines && prescription.medicines.length > 0
+            ? prescription.medicines.map((med, index) => ({
+                id: med.id || index + 1,
+                medicineName: med.medicineName || "",
+                dosage: med.dosage || "",
+                frequency: med.frequency || "",
+                duration: med.duration || "",
+                instructions: med.instruction || "", // Note: backend uses 'instruction' (singular)
+                quantity: med.quantity || "",
+              }))
+            : [
+                {
+                  id: 1,
+                  medicineName: "",
+                  dosage: "",
+                  frequency: "",
+                  duration: "",
+                  instructions: "",
+                  quantity: "",
+                },
+              ],
+        additionalNotes: prescription.additionalNotes || "",
+        followUpDate: prescription.followUpDate || "",
+        doctorName: prescription.doctorName || "Dr. [Doctor Name]",
+        prescriptionDate:
+          prescription.createdDate || new Date().toISOString().split("T")[0],
+      });
+    } else if (patient) {
+      // Create mode - just patient data
+      console.log("Creating new prescription for patient:", patient);
       setPrescriptionData((prev) => ({
         ...prev,
         patientId: patient.id || "",
@@ -42,7 +84,7 @@ const PrescriptionForm = ({ patient, onClose, onSave }) => {
         gender: patient.gender || "",
       }));
     }
-  }, [patient]);
+  }, [patient, prescription]);
 
   const frequencyOptions = [
     "Once daily",

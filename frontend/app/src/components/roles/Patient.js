@@ -169,13 +169,17 @@ const Patient = () => {
     }
   };
 
-  // Handle appointment cancellation
+  // Handle appointment cancellation (patients can only cancel, not delete)
   const handleCancelAppointment = (appointmentId) => {
     toast(
       (t) => (
         <div className="flex flex-col space-y-3">
           <p className="font-medium text-gray-800">
             Are you sure you want to cancel this appointment?
+          </p>
+          <p className="text-sm text-gray-600">
+            This action cannot be undone. You'll need to book a new appointment
+            if needed.
           </p>
           <div className="flex space-x-2">
             <button
@@ -220,37 +224,46 @@ const Patient = () => {
   };
 
   // Handle view prescription
-  const handleViewPrescription = (appointment) => {
-    withLoading(async () => {
-      try {
-        // Get prescriptions for this patient
-        const response = await prescriptionAPI.getByPatientName(
-          appointment.patientName
-        );
+  const handleViewPrescription = async (appointment) => {
+    try {
+      console.log("Loading prescription for:", appointment.patientName);
 
-        if (response.data && response.data.length > 0) {
-          // Find the most recent prescription or one matching the appointment date
-          const matchingPrescription =
-            response.data.find(
-              (p) =>
-                new Date(p.createdDate).toDateString() ===
-                new Date(appointment.appointmentDate).toDateString()
-            ) || response.data[0];
+      // Get prescriptions for this patient
+      const response = await prescriptionAPI.getByPatientName(
+        appointment.patientName
+      );
 
-          setSelectedPrescription(matchingPrescription);
-          setSelectedAppointment(appointment);
-          setShowPrescriptionModal(true);
-        } else {
-          toast.error("No prescription found for this appointment.", {
-            duration: 3000,
-            position: "top-center",
-          });
-        }
-      } catch (error) {
-        console.error("Error loading prescription:", error);
-        toast.error("Failed to load prescription");
+      console.log("Prescription response:", response.data);
+
+      if (response.data && response.data.length > 0) {
+        // Find the most recent prescription or one matching the appointment date
+        const matchingPrescription =
+          response.data.find(
+            (p) =>
+              new Date(p.createdDate).toDateString() ===
+              new Date(appointment.appointmentDate).toDateString()
+          ) || response.data[0];
+
+        console.log("Selected prescription:", matchingPrescription);
+
+        setSelectedPrescription(matchingPrescription);
+        setSelectedAppointment(appointment);
+        setShowPrescriptionModal(true);
+      } else {
+        console.log("No prescriptions found");
+        toast.error("No prescription found for this appointment.", {
+          duration: 3000,
+          position: "top-center",
+        });
       }
-    });
+    } catch (error) {
+      console.error("Error loading prescription:", error);
+      console.error("Error details:", error.response?.data);
+      toast.error(
+        "Failed to load prescription: " +
+          (error.response?.data?.message || error.message)
+      );
+    }
   };
 
   const handleClosePrescription = () => {

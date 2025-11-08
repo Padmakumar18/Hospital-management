@@ -63,17 +63,17 @@ const PrescriptionView = ({ prescription, onClose }) => {
                 Prescribed by
               </h3>
               <p className="text-lg font-medium text-blue-600">
-                {prescription.doctorName}
+                {prescription.doctorName || "Dr. Unknown"}
               </p>
               <p className="text-sm text-gray-600">
-                {prescription.doctorSpecialty}
+                Doctor ID: {prescription.doctorId || "N/A"}
               </p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-800 mb-2">Patient</h3>
               <p className="text-lg font-medium">{prescription.patientName}</p>
               <p className="text-sm text-gray-600">
-                Age: {prescription.patientAge}
+                Age: {prescription.age} | Gender: {prescription.gender}
               </p>
             </div>
           </div>
@@ -85,34 +85,44 @@ const PrescriptionView = ({ prescription, onClose }) => {
                 <span className="text-sm font-medium text-gray-600">
                   Date Prescribed:
                 </span>
-                <p className="text-gray-800">{formatDate(prescription.date)}</p>
+                <p className="text-gray-800">
+                  {prescription.createdDate
+                    ? formatDate(prescription.createdDate)
+                    : "N/A"}
+                </p>
               </div>
-              <div>
-                <span className="text-sm font-medium text-gray-600">
-                  Status:
-                </span>
-                <span
-                  className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                    prescription.status === "Active"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {prescription.status}
-                </span>
-              </div>
+              {prescription.followUpDate && (
+                <div>
+                  <span className="text-sm font-medium text-gray-600">
+                    Follow-up Date:
+                  </span>
+                  <p className="text-gray-800">
+                    {formatDate(prescription.followUpDate)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Diagnosis */}
-          {prescription.diagnosis && (
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-2">Diagnosis</h3>
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                <p className="text-gray-800">{prescription.diagnosis}</p>
+          {/* Diagnosis and Symptoms */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            {prescription.diagnosis && (
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Diagnosis</h3>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                  <p className="text-gray-800">{prescription.diagnosis}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {prescription.symptoms && (
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Symptoms</h3>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                  <p className="text-gray-800">{prescription.symptoms}</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Medications */}
           <div className="mb-6">
@@ -120,75 +130,73 @@ const PrescriptionView = ({ prescription, onClose }) => {
               Prescribed Medications
             </h3>
             <div className="space-y-4">
-              {prescription.medicines.map((medicine, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium text-lg text-gray-800">
-                      {medicine.name}
-                    </h4>
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
-                      {medicine.type}
-                    </span>
-                  </div>
+              {prescription.medicines && prescription.medicines.length > 0 ? (
+                prescription.medicines.map((medicine, index) => (
+                  <motion.div
+                    key={medicine.id || index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-medium text-lg text-gray-800">
+                        {medicine.medicineName || medicine.name}
+                      </h4>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+                        Qty: {medicine.quantity}
+                      </span>
+                    </div>
 
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">Dosage:</span>
-                      <p className="text-gray-800">{medicine.dosage}</p>
+                    <div className="grid md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-600">
+                          Dosage:
+                        </span>
+                        <p className="text-gray-800">{medicine.dosage}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">
+                          Frequency:
+                        </span>
+                        <p className="text-gray-800">{medicine.frequency}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">
+                          Duration:
+                        </span>
+                        <p className="text-gray-800">{medicine.duration}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-600">
-                        Frequency:
-                      </span>
-                      <p className="text-gray-800">{medicine.frequency}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">
-                        Duration:
-                      </span>
-                      <p className="text-gray-800">{medicine.duration}</p>
-                    </div>
-                  </div>
 
-                  {medicine.instructions && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <span className="font-medium text-gray-600">
-                        Instructions:
-                      </span>
-                      <p className="text-gray-800 mt-1">
-                        {medicine.instructions}
-                      </p>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                    {medicine.instruction && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <span className="font-medium text-gray-600">
+                          Instructions:
+                        </span>
+                        <p className="text-gray-800 mt-1">
+                          {medicine.instruction}
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-4">
+                  No medicines prescribed
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Additional Instructions */}
-          {prescription.instructions && (
+          {/* Additional Notes */}
+          {prescription.additionalNotes && (
             <div className="mb-6">
               <h3 className="font-semibold text-gray-800 mb-2">
-                Additional Instructions
+                Additional Notes
               </h3>
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                <p className="text-gray-800">{prescription.instructions}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Follow-up */}
-          {prescription.followUp && (
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-2">Follow-up</h3>
               <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                <p className="text-gray-800">{prescription.followUp}</p>
+                <p className="text-gray-800">{prescription.additionalNotes}</p>
               </div>
             </div>
           )}

@@ -49,4 +49,29 @@ export const userAPI = {
   delete: (email) => api.delete(`/users/${email}`),
 };
 
+// Doctor APIs
+export const doctorAPI = {
+  create: (doctorData) => api.post("/doctors", doctorData),
+  getAll: () => api.get("/doctors"),
+  getAvailable: () => api.get("/doctors/available"),
+  getByDepartment: (department) => api.get(`/doctors/department/${department}`),
+  getBySpecialization: (specialization) =>
+    api.get(`/doctors/specialization/${specialization}`),
+  getById: (id) => api.get(`/doctors/${id}`),
+  getByEmail: (email) => api.get(`/doctors/email/${email}`),
+  update: (id, doctorData) => api.put(`/doctors/${id}`, doctorData),
+  delete: (id) => api.delete(`/doctors/${id}`),
+};
+
+// Department APIs
+export const departmentAPI = {
+  create: (departmentData) => api.post("/departments", departmentData),
+  getAll: () => api.get("/departments"),
+  getActive: () => api.get("/departments/active"),
+  getById: (id) => api.get(`/departments/${id}`),
+  getByName: (name) => api.get(`/departments/name/${name}`),
+  update: (id, departmentData) => api.put(`/departments/${id}`, departmentData),
+  delete: (id) => api.delete(`/departments/${id}`),
+};
+
 export default api;

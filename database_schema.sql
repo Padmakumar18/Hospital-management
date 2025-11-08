@@ -99,6 +99,41 @@ CREATE TABLE IF NOT EXISTS medicines (
 CREATE INDEX IF NOT EXISTS idx_medicines_prescription ON medicines(prescription_id);
 
 -- ============================================
+-- 5. DEPARTMENTS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS departments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    description VARCHAR(1000),
+    head VARCHAR(255),
+    active BOOLEAN DEFAULT TRUE
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_departments_name ON departments(name);
+CREATE INDEX IF NOT EXISTS idx_departments_active ON departments(active);
+
+-- ============================================
+-- 6. DOCTORS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS doctors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    specialization VARCHAR(255),
+    department VARCHAR(255),
+    phone VARCHAR(50),
+    experience_years INTEGER,
+    qualification VARCHAR(500),
+    available BOOLEAN DEFAULT TRUE
+);
+
+-- Create indexes for faster queries
+CREATE INDEX IF NOT EXISTS idx_doctors_email ON doctors(email);
+CREATE INDEX IF NOT EXISTS idx_doctors_department ON doctors(department);
+CREATE INDEX IF NOT EXISTS idx_doctors_available ON doctors(available);
+
+-- ============================================
 -- SAMPLE DATA (Optional - for testing)
 -- ============================================
 
@@ -111,6 +146,8 @@ INSERT INTO users (id, user_email, user_password, user_name, user_role) VALUES
 (gen_random_uuid(), 'patient2@hospital.com', 'patient123', 'Emma Wilson', 'Patient'),
 (gen_random_uuid(), 'pharmacist@hospital.com', 'pharma123', 'Robert Brown', 'Pharmacist')
 ON CONFLICT (user_email) DO NOTHING;
+
+-- Note: Departments and Doctors will be auto-seeded by the DataSeeder class on application startup
 
 -- ============================================
 -- VERIFICATION QUERIES

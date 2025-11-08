@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { doctorAPI, departmentAPI } from "../../../../services/api";
+import toast from "react-hot-toast";
 
 const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -16,36 +18,45 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [departments, setDepartments] = useState([]);
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const departments = [
-    "General Medicine",
-    "Cardiology",
-    "Dermatology",
-    "Neurology",
-    "Orthopedics",
-    "Pediatrics",
-    "Gynecology",
-    "ENT",
-    "Ophthalmology",
-    "Psychiatry",
-  ];
+  // Load departments and doctors from database
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const doctors = {
-    "General Medicine": [
-      "Dr. Neha Bhatia",
-      "Dr. Rajesh Kumar",
-      "Dr. Priya Sharma",
-    ],
-    Cardiology: ["Dr. Meena Kapoor", "Dr. Arjun Singh", "Dr. Kavita Reddy"],
-    Dermatology: ["Dr. Rajesh Kumar", "Dr. Sneha Patel", "Dr. Amit Gupta"],
-    Neurology: ["Dr. Sneha Iyer", "Dr. Vikram Rao", "Dr. Deepika Singh"],
-    Orthopedics: ["Dr. Amitabh Singh", "Dr. Ravi Kumar", "Dr. Meera Joshi"],
-    Pediatrics: ["Dr. Anita Gupta", "Dr. Suresh Patel", "Dr. Kavya Nair"],
-    Gynecology: ["Dr. Priya Nair", "Dr. Sunita Sharma", "Dr. Rekha Verma"],
-    ENT: ["Dr. Mohammed Ali", "Dr. Deepak Joshi", "Dr. Sita Ram"],
-    Ophthalmology: ["Dr. Rahul Verma", "Dr. Nisha Patel", "Dr. Kiran Kumar"],
-    Psychiatry: ["Dr. Aarav Sharma", "Dr. Pooja Singh", "Dr. Manish Gupta"],
+  const loadData = async () => {
+    try {
+      setIsLoadingData(true);
+      const [deptResponse, doctorResponse] = await Promise.all([
+        departmentAPI.getActive(),
+        doctorAPI.getAvailable(),
+      ]);
+
+      setDepartments(deptResponse.data || []);
+      setAllDoctors(doctorResponse.data || []);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("Failed to load departments and doctors");
+    } finally {
+      setIsLoadingData(false);
+    }
   };
+
+  // Filter doctors when department changes
+  useEffect(() => {
+    if (formData.department) {
+      const doctors = allDoctors.filter(
+        (doc) => doc.department === formData.department
+      );
+      setFilteredDoctors(doctors);
+    } else {
+      setFilteredDoctors([]);
+    }
+  }, [formData.department, allDoctors]);
 
   const timeSlots = [
     "09:00 AM",
@@ -309,11 +320,16 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                   errors.department ? "border-red-500" : "border-gray-300"
                 }`}
+                disabled={isLoadingData}
               >
-                <option value="">Select department</option>
+                <option value="">
+                  {isLoadingData
+                    ? "Loading departments..."
+                    : "Select department"}
+                </option>
                 {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
+                  <option key={dept.id} value={dept.name}>
+                    {dept.name}
                   </option>
                 ))}
               </select>
@@ -332,15 +348,20 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                   errors.doctor ? "border-red-500" : "border-gray-300"
                 }`}
-                disabled={!formData.department}
+                disabled={!formData.department || isLoadingData}
               >
-                <option value="">Select doctor</option>
-                {formData.department &&
-                  doctors[formData.department]?.map((doctor) => (
-                    <option key={doctor} value={doctor}>
-                      {doctor}
-                    </option>
-                  ))}
+                <option value="">
+                  {!formData.department
+                    ? "Select department first"
+                    : filteredDoctors.length === 0
+                    ? "No doctors available"
+                    : "Select doctor"}
+                </option>
+                {filteredDoctors.map((doctor) => (
+                  <option key={doctor.id} value={doctor.name}>
+                    {doctor.name} - {doctor.specialization}
+                  </option>
+                ))}
               </select>
               {errors.doctor && (
                 <p className="text-red-500 text-xs mt-1">{errors.doctor}</p>
