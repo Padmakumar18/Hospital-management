@@ -28,6 +28,22 @@ public class User {
     @Column(name = "phone")
     private String phone;
 
+    // Doctor/Pharmacist specific fields (stored temporarily until admin approval)
+    @Column(name = "specialization")
+    private String specialization;
+
+    @Column(name = "department")
+    private String department;
+
+    @Column(name = "qualification")
+    private String qualification;
+
+    @Column(name = "license_number")
+    private String licenseNumber;
+
+    @Column(name = "experience_years")
+    private Integer experienceYears;
+
     public UUID getId() {
         return id;
     }
@@ -82,5 +98,45 @@ public class User {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getSpecialization() {
+        return specialization;
+    }
+
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public String getQualification() {
+        return qualification;
+    }
+
+    public void setQualification(String qualification) {
+        this.qualification = qualification;
+    }
+
+    public String getLicenseNumber() {
+        return licenseNumber;
+    }
+
+    public void setLicenseNumber(String licenseNumber) {
+        this.licenseNumber = licenseNumber;
+    }
+
+    public Integer getExperienceYears() {
+        return experienceYears;
+    }
+
+    public void setExperienceYears(Integer experienceYears) {
+        this.experienceYears = experienceYears;
     }
 }

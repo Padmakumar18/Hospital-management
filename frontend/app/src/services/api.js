@@ -47,6 +47,9 @@ export const userAPI = {
   getByRole: (role) => api.get(`/users/role/${role}`),
   update: (email, userData) => api.put(`/users/${email}`, userData),
   delete: (email) => api.delete(`/users/${email}`),
+  getPendingVerification: () => api.get("/users/pending-verification"),
+  verifyUser: (email) => api.patch(`/users/${email}/verify`),
+  rejectUser: (email) => api.patch(`/users/${email}/reject`),
 };
 
 // Doctor APIs

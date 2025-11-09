@@ -15,6 +15,7 @@ const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingUsers, setPendingUsers] = useState([]);
 
   useEffect(() => {
     loadAllData();
@@ -23,11 +24,13 @@ const Admin = () => {
   const loadAllData = async () => {
     try {
       setIsLoading(true);
-      const [usersRes, appointmentsRes, prescriptionsRes] = await Promise.all([
-        userAPI.getAll(),
-        appointmentAPI.getAll(),
-        prescriptionAPI.getAll(),
-      ]);
+      const [usersRes, appointmentsRes, prescriptionsRes, pendingRes] =
+        await Promise.all([
+          userAPI.getAll(),
+          appointmentAPI.getAll(),
+          prescriptionAPI.getAll(),
+          userAPI.getPendingVerification(),
+        ]);
 
       // Ensure all data is an array
       const usersData = Array.isArray(usersRes.data) ? usersRes.data : [];
@@ -37,14 +40,17 @@ const Admin = () => {
       const prescriptionsData = Array.isArray(prescriptionsRes.data)
         ? prescriptionsRes.data
         : [];
+      const pendingData = Array.isArray(pendingRes.data) ? pendingRes.data : [];
 
       console.log("Admin - Users loaded:", usersData.length);
       console.log("Admin - Appointments loaded:", appointmentsData.length);
       console.log("Admin - Prescriptions loaded:", prescriptionsData.length);
+      console.log("Admin - Pending users:", pendingData.length);
 
       setUsers(usersData);
       setAppointments(appointmentsData);
       setPrescriptions(prescriptionsData);
+      setPendingUsers(pendingData);
     } catch (error) {
       console.error("Error loading data:", error);
       toast.error("Failed to load data", {
@@ -55,6 +61,7 @@ const Admin = () => {
       setUsers([]);
       setAppointments([]);
       setPrescriptions([]);
+      setPendingUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -143,6 +150,71 @@ const Admin = () => {
     }
   };
 
+  const handleApproveUser = async (userEmail) => {
+    try {
+      await userAPI.verifyUser(userEmail);
+      toast.success("User approved successfully!", {
+        duration: 5000,
+        position: "top-center",
+      });
+      await loadAllData();
+    } catch (error) {
+      console.error("Error approving user:", error);
+      toast.error("Failed to approve user", {
+        duration: 5000,
+        position: "top-center",
+      });
+    }
+  };
+
+  const handleRejectUser = (userEmail, userName) => {
+    toast(
+      (t) => (
+        <div className="flex flex-col space-y-3">
+          <p className="font-medium text-gray-800">
+            Are you sure you want to reject {userName}?
+          </p>
+          <p className="text-sm text-gray-600">
+            This will permanently delete their account.
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={async () => {
+                try {
+                  await userAPI.rejectUser(userEmail);
+                  toast.dismiss(t.id);
+                  toast.success("User rejected and removed!", {
+                    duration: 5000,
+                    position: "top-center",
+                  });
+                  await loadAllData();
+                } catch (error) {
+                  toast.error("Failed to reject user", {
+                    duration: 5000,
+                    position: "top-center",
+                  });
+                }
+              }}
+              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+            >
+              Yes, Reject
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-400 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+        position: "top-center",
+      }
+    );
+  };
+
   const getUserStats = () => {
     const stats = {};
     users.forEach((user) => {
@@ -156,6 +228,7 @@ const Admin = () => {
     activeUsers: users.length, // All users are active by default
     totalAppointments: appointments.length,
     totalPrescriptions: prescriptions.length,
+    pendingApprovals: pendingUsers.length,
   };
 
   const userStats = getUserStats();
@@ -176,9 +249,15 @@ const Admin = () => {
     <div className="container-fluid min-h-screen bg-gray-50">
       <div className="p-6">
         {/* Navigation Tabs */}
-        <div className="flex space-x-2 mb-6">
+        <div className="flex space-x-2 mb-6 overflow-x-auto">
           {[
             { id: "dashboard", label: "Dashboard", icon: "📊" },
+            {
+              id: "pending",
+              label: "Pending Approvals",
+              icon: "⏳",
+              badge: pendingUsers.length,
+            },
             { id: "users", label: "User Management", icon: "👥" },
             { id: "appointments", label: "Appointments", icon: "📅" },
             { id: "prescriptions", label: "Prescriptions", icon: "💊" },
@@ -186,7 +265,7 @@ const Admin = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 relative ${
                 activeTab === tab.id
                   ? "bg-purple-600 text-white"
                   : "bg-white text-gray-600 hover:bg-gray-100"
@@ -194,6 +273,11 @@ const Admin = () => {
             >
               <span>{tab.icon}</span>
               <span>{tab.label}</span>
+              {tab.badge > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -291,14 +375,15 @@ const Admin = () => {
               </motion.div>
 
               <motion.div
-                className="bg-orange-500 text-white rounded-lg p-6"
+                className="bg-orange-500 text-white rounded-lg p-6 cursor-pointer"
                 whileHover={{ scale: 1.02 }}
+                onClick={() => setActiveTab("pending")}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-orange-100 text-sm">Active Users</p>
+                    <p className="text-orange-100 text-sm">Pending Approvals</p>
                     <p className="text-3xl font-bold">
-                      {systemStats.activeUsers}
+                      {systemStats.pendingApprovals}
                     </p>
                   </div>
                   <div className="text-orange-200">
@@ -312,7 +397,7 @@ const Admin = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
                   </div>
@@ -345,6 +430,155 @@ const Admin = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pending Approvals Tab */}
+        {activeTab === "pending" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Pending User Approvals
+                </h3>
+                <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {pendingUsers.length} Pending
+                </span>
+              </div>
+
+              {pendingUsers.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✅</div>
+                  <p className="text-gray-500 text-lg">No pending approvals</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    All users have been verified
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingUsers.map((user) => (
+                    <div
+                      key={user.email}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className="text-lg font-semibold text-gray-800">
+                              {user.name}
+                            </h4>
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                              {user.role}
+                            </span>
+                          </div>
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <p>
+                              <span className="font-medium">Email:</span>{" "}
+                              {user.email}
+                            </p>
+                            {user.phone && (
+                              <p>
+                                <span className="font-medium">Phone:</span>{" "}
+                                {user.phone}
+                              </p>
+                            )}
+                            {(user.role === "Doctor" ||
+                              user.role === "Pharmacist") && (
+                              <>
+                                {user.specialization && (
+                                  <p>
+                                    <span className="font-medium">
+                                      Specialization:
+                                    </span>{" "}
+                                    {user.specialization}
+                                  </p>
+                                )}
+                                {user.department && (
+                                  <p>
+                                    <span className="font-medium">
+                                      Department:
+                                    </span>{" "}
+                                    {user.department}
+                                  </p>
+                                )}
+                                {user.qualification && (
+                                  <p>
+                                    <span className="font-medium">
+                                      Qualification:
+                                    </span>{" "}
+                                    {user.qualification}
+                                  </p>
+                                )}
+                                {user.licenseNumber && (
+                                  <p>
+                                    <span className="font-medium">
+                                      License:
+                                    </span>{" "}
+                                    {user.licenseNumber}
+                                  </p>
+                                )}
+                                {user.experienceYears !== undefined && (
+                                  <p>
+                                    <span className="font-medium">
+                                      Experience:
+                                    </span>{" "}
+                                    {user.experienceYears} years
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 ml-4">
+                          <button
+                            onClick={() => handleApproveUser(user.email)}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+                            title="Approve User"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleRejectUser(user.email, user.name)
+                            }
+                            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center space-x-2"
+                            title="Reject User"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                            <span>Reject</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -424,6 +658,9 @@ const Admin = () => {
                           Role
                         </th>
                         <th className="text-left p-4 font-semibold text-gray-700">
+                          Status
+                        </th>
+                        <th className="text-left p-4 font-semibold text-gray-700">
                           Actions
                         </th>
                       </tr>
@@ -448,6 +685,43 @@ const Admin = () => {
                             <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm">
                               {user.role}
                             </span>
+                          </td>
+                          <td className="p-4">
+                            {user.verified ? (
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm flex items-center space-x-1 w-fit">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                                <span>Verified</span>
+                              </span>
+                            ) : (
+                              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm flex items-center space-x-1 w-fit">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                <span>Pending</span>
+                              </span>
+                            )}
                           </td>
                           <td className="p-4">
                             <div className="flex space-x-2">

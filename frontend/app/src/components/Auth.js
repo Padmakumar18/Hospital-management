@@ -25,13 +25,33 @@ const Auth = () => {
     fullName: "",
     role: "",
     phone: "",
+    specialization: "",
+    department: "",
+    qualification: "",
+    licenseNumber: "",
+    experienceYears: "",
   });
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    // If role is changed, clear doctor-specific fields if not Doctor/Pharmacist
+    if (name === "role" && value !== "Doctor" && value !== "Pharmacist") {
+      setFormData({
+        ...formData,
+        [name]: value,
+        specialization: "",
+        department: "",
+        qualification: "",
+        licenseNumber: "",
+        experienceYears: "",
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   const handleLogin = async () => {
@@ -59,14 +79,17 @@ const Auth = () => {
       });
     } else if (response) {
       const result = response.data;
-      toast.success("Login successful!", {
-        duration: 5000,
+      const toastID = toast.success("Login successful!", {
         position: "top-center",
       });
       localStorage.setItem("hsp-email-id", formData.email);
       localStorage.setItem("hsp-password", formData.password);
 
       dispatch(setProfile(result.user));
+
+      setTimeout(() => {
+        toast.dismiss(toastID);
+      }, 3000);
 
       navigate("/home");
     } else {
@@ -79,13 +102,24 @@ const Auth = () => {
 
   const handleSignup = async () => {
     try {
-      const response = await axios.post(`${API_URL}/auth/signup`, {
+      const signupData = {
         email: formData.email,
         password: formData.password,
         name: formData.fullName,
         role: formData.role,
         phone: formData.phone,
-      });
+      };
+
+      // Add doctor-specific fields if role is Doctor or Pharmacist
+      if (formData.role === "Doctor" || formData.role === "Pharmacist") {
+        signupData.specialization = formData.specialization;
+        signupData.department = formData.department;
+        signupData.qualification = formData.qualification;
+        signupData.licenseNumber = formData.licenseNumber;
+        signupData.experienceYears = parseInt(formData.experienceYears);
+      }
+
+      const response = await axios.post(`${API_URL}/auth/signup`, signupData);
       const result = response.data;
       console.log("Signup response:", result);
 
@@ -112,8 +146,7 @@ const Auth = () => {
           });
         } else {
           // Patient or Admin - auto-verified
-          toast.success("Signup successful!", {
-            duration: 5000,
+          const toastID = toast.success("Signup successful!", {
             position: "top-center",
           });
 
@@ -129,6 +162,8 @@ const Auth = () => {
           dispatch(setProfile(userProfile));
 
           clearForm();
+          toast.dismiss(toastID);
+
           navigate("/home");
         }
       }
@@ -168,14 +203,17 @@ const Auth = () => {
 
           if (response && response.pendingApproval) {
             // User account is pending approval
-            toast.error(
+            const toastID = toast.error(
               response.data.message ||
                 "Your account is pending admin approval.",
               {
-                duration: 5000,
                 position: "top-center",
               }
             );
+
+            setTimeout(() => {
+              toast.dismiss(toastID);
+            }, 3000);
 
             // Clear credentials and redirect to waiting approval page
             localStorage.removeItem("hsp-email-id");
@@ -220,6 +258,11 @@ const Auth = () => {
       fullName: "",
       role: "",
       phone: "",
+      specialization: "",
+      department: "",
+      qualification: "",
+      licenseNumber: "",
+      experienceYears: "",
     });
   };
 
@@ -259,6 +302,11 @@ const Auth = () => {
       fullName: "",
       role: "",
       phone: "",
+      specialization: "",
+      department: "",
+      qualification: "",
+      licenseNumber: "",
+      experienceYears: "",
     });
   };
 
@@ -412,6 +460,98 @@ const Auth = () => {
                   </select>
                 </motion.div>
               )}
+
+              {!isLogin &&
+                (formData.role === "Doctor" ||
+                  formData.role === "Pharmacist") && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
+                    className="space-y-4 pt-4 border-t border-gray-200"
+                  >
+                    <p className="text-sm font-medium text-gray-700">
+                      Professional Details
+                    </p>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Specialization
+                      </label>
+                      <input
+                        type="text"
+                        name="specialization"
+                        value={formData.specialization}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        placeholder="e.g., Cardiology, Pediatrics"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Department
+                      </label>
+                      <input
+                        type="text"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        placeholder="e.g., Cardiology Department"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Qualification
+                      </label>
+                      <input
+                        type="text"
+                        name="qualification"
+                        value={formData.qualification}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        placeholder="e.g., MBBS, MD"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        License Number
+                      </label>
+                      <input
+                        type="text"
+                        name="licenseNumber"
+                        value={formData.licenseNumber}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        placeholder="Medical license number"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Years of Experience
+                      </label>
+                      <input
+                        type="number"
+                        name="experienceYears"
+                        value={formData.experienceYears}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        placeholder="Years of experience"
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </motion.div>
+                )}
 
               {isLogin && (
                 <motion.div

@@ -39,6 +39,11 @@ public class AuthController {
         public String name;
         public String role;
         public String phone;
+        public String specialization;
+        public String department;
+        public String qualification;
+        public String licenseNumber;
+        public Integer experienceYears;
     }
 
     static class SignupResponse {
@@ -72,6 +77,15 @@ public class AuthController {
                 user.setVerified(true);
             } else {
                 user.setVerified(false);
+            }
+
+            // Store doctor/pharmacist specific fields
+            if ("Doctor".equals(signupRequest.role) || "Pharmacist".equals(signupRequest.role)) {
+                user.setSpecialization(signupRequest.specialization);
+                user.setDepartment(signupRequest.department);
+                user.setQualification(signupRequest.qualification);
+                user.setLicenseNumber(signupRequest.licenseNumber);
+                user.setExperienceYears(signupRequest.experienceYears);
             }
 
             // Create user and doctor record if role is Doctor
