@@ -76,8 +76,8 @@ const Admin = () => {
     loadAllData(true);
   }, []);
 
-  // Auto-refresh every 10 seconds without showing loading
-  useAutoRefresh(loadAllData, 10000, true);
+  // Auto-refresh every 15 seconds without showing loading
+  useAutoRefresh(loadAllData, 15000, true);
 
   const getFilteredUsers = () => {
     let filtered = users;

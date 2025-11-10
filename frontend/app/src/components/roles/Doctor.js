@@ -63,8 +63,8 @@ const Doctor = () => {
     }
   }, [profile]);
 
-  // Auto-refresh every 10 seconds without showing loading
-  useAutoRefresh(loadAppointments, 10000, true, [profile]);
+  // Auto-refresh every 15 seconds without showing loading
+  useAutoRefresh(loadAppointments, 15000, true, [profile]);
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);
@@ -146,6 +146,9 @@ const Doctor = () => {
     console.log("Prescription data to save:", prescriptionData);
 
     try {
+      // Check if this is an edit (existing prescription)
+      const isEdit = selectedPatient?.existingPrescription?.id;
+
       // Prepare prescription data with doctor info
       const prescriptionToSave = {
         ...prescriptionData,
@@ -163,10 +166,37 @@ const Doctor = () => {
       };
 
       console.log("Sending prescription to backend:", prescriptionToSave);
+      console.log("Is Edit:", isEdit);
 
-      // Create prescription via API
-      const response = await prescriptionAPI.create(prescriptionToSave);
-      console.log("Prescription created successfully:", response.data);
+      let response;
+      if (isEdit) {
+        // Update existing prescription
+        response = await prescriptionAPI.update(
+          selectedPatient.existingPrescription.id,
+          prescriptionToSave
+        );
+        console.log("Prescription updated successfully:", response.data);
+
+        toast.success(
+          `Prescription updated successfully for ${prescriptionData.patientName}!`,
+          {
+            duration: 5000,
+            position: "top-center",
+          }
+        );
+      } else {
+        // Create new prescription
+        response = await prescriptionAPI.create(prescriptionToSave);
+        console.log("Prescription created successfully:", response.data);
+
+        toast.success(
+          `Prescription created successfully for ${prescriptionData.patientName}!`,
+          {
+            duration: 5000,
+            position: "top-center",
+          }
+        );
+      }
 
       // Update appointment: mark as completed and prescription given
       const updatedAppointment = {
@@ -178,14 +208,6 @@ const Doctor = () => {
       };
 
       await appointmentAPI.update(selectedPatient.id, updatedAppointment);
-
-      toast.success(
-        `Prescription created successfully for ${prescriptionData.patientName}!`,
-        {
-          duration: 5000,
-          position: "top-center",
-        }
-      );
 
       // Reload appointments to get updated data
       await loadAppointments();

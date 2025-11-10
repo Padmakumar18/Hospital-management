@@ -62,6 +62,12 @@ public class PrescriptionEntity {
     @Column(name = "dispensed_by")
     private String dispensedBy;
 
+    @Column(name = "is_edited")
+    private Boolean isEdited = false;
+
+    @Column(name = "last_edited_date")
+    private LocalDate lastEditedDate;
+
     // Getters and Setters
     public UUID getId() {
         return id;
@@ -192,5 +198,21 @@ public class PrescriptionEntity {
 
     public void setDispensedBy(String dispensedBy) {
         this.dispensedBy = dispensedBy;
+    }
+
+    public Boolean getEdited() {
+        return isEdited != null ? isEdited : false;
+    }
+
+    public void setEdited(Boolean edited) {
+        isEdited = edited;
+    }
+
+    public LocalDate getLastEditedDate() {
+        return lastEditedDate;
+    }
+
+    public void setLastEditedDate(LocalDate lastEditedDate) {
+        this.lastEditedDate = lastEditedDate;
     }
 }

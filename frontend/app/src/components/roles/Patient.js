@@ -56,8 +56,8 @@ const Patient = () => {
     }
   }, [profile]);
 
-  // Auto-refresh every 10 seconds without showing loading
-  useAutoRefresh(loadAppointments, 10000, true, [profile]);
+  // Auto-refresh every 15 seconds without showing loading
+  useAutoRefresh(loadAppointments, 15000, true, [profile]);
 
   const calculateStats = (appointments) => {
     const stats = {

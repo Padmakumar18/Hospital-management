@@ -61,6 +61,10 @@ public class PrescriptionService {
             existingPrescription.setAdditionalNotes(prescriptionDetails.getAdditionalNotes());
             existingPrescription.setFollowUpDate(prescriptionDetails.getFollowUpDate());
 
+            // Mark as edited
+            existingPrescription.setEdited(true);
+            existingPrescription.setLastEditedDate(LocalDate.now());
+
             // Update medicines
             existingPrescription.getMedicines().clear();
             if (prescriptionDetails.getMedicines() != null) {
