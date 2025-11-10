@@ -37,6 +37,10 @@ export const prescriptionAPI = {
     api.get(`/prescriptions/patient-name/${patientName}`),
   update: (id, prescriptionData) =>
     api.put(`/prescriptions/${id}`, prescriptionData),
+  dispense: (id, pharmacistName) =>
+    api.patch(`/prescriptions/${id}/dispense`, null, {
+      params: { pharmacistName },
+    }),
   delete: (id) => api.delete(`/prescriptions/${id}`),
 };
 

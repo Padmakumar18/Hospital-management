@@ -7,6 +7,7 @@ import PatientCard from "./components/doctor/PatientCard";
 import PrescriptionForm from "./components/doctor/Prescription";
 import AgeDistribution from "./components/doctor/AgeDistribution";
 import Loading from "../Loading";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,14 +22,11 @@ const Doctor = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load appointments on component mount
-  useEffect(() => {
-    loadAppointments();
-  }, [profile]);
-
-  const loadAppointments = async () => {
+  const loadAppointments = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       // Get all appointments
       const response = await appointmentAPI.getAll();
 
@@ -45,14 +43,28 @@ const Doctor = () => {
       setAppointmentData(doctorAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments", {
-        duration: 5000,
-        position: "top-center",
-      });
+      if (showLoading) {
+        toast.error("Failed to load appointments", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
+
+  // Load appointments on component mount
+  useEffect(() => {
+    if (profile) {
+      loadAppointments(true);
+    }
+  }, [profile]);
+
+  // Auto-refresh every 10 seconds without showing loading
+  useAutoRefresh(loadAppointments, 10000, true, [profile]);
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);

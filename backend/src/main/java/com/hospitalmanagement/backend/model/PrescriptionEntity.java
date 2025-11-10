@@ -41,7 +41,7 @@ public class PrescriptionEntity {
     @Column(name = "symptoms", length = 1000)
     private String symptoms;
 
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Medicine> medicines = new ArrayList<>();
 
     @Column(name = "additional_notes", length = 1000)
@@ -52,6 +52,15 @@ public class PrescriptionEntity {
 
     @Column(name = "created_date")
     private LocalDate createdDate;
+
+    @Column(name = "dispensed_status")
+    private String dispensedStatus = "Pending";
+
+    @Column(name = "dispensed_date")
+    private LocalDate dispensedDate;
+
+    @Column(name = "dispensed_by")
+    private String dispensedBy;
 
     // Getters and Setters
     public UUID getId() {
@@ -159,5 +168,29 @@ public class PrescriptionEntity {
 
     public void setCreatedDate(LocalDate createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public String getDispensedStatus() {
+        return dispensedStatus;
+    }
+
+    public void setDispensedStatus(String dispensedStatus) {
+        this.dispensedStatus = dispensedStatus;
+    }
+
+    public LocalDate getDispensedDate() {
+        return dispensedDate;
+    }
+
+    public void setDispensedDate(LocalDate dispensedDate) {
+        this.dispensedDate = dispensedDate;
+    }
+
+    public String getDispensedBy() {
+        return dispensedBy;
+    }
+
+    public void setDispensedBy(String dispensedBy) {
+        this.dispensedBy = dispensedBy;
     }
 }

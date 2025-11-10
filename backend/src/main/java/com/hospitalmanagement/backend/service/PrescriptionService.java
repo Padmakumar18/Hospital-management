@@ -75,6 +75,18 @@ public class PrescriptionService {
         throw new RuntimeException("Prescription not found with id: " + id);
     }
 
+    public PrescriptionEntity dispensePrescription(UUID id, String pharmacistName) {
+        Optional<PrescriptionEntity> prescription = prescriptionRepository.findById(id);
+        if (prescription.isPresent()) {
+            PrescriptionEntity existingPrescription = prescription.get();
+            existingPrescription.setDispensedStatus("Dispensed");
+            existingPrescription.setDispensedDate(LocalDate.now());
+            existingPrescription.setDispensedBy(pharmacistName);
+            return prescriptionRepository.save(existingPrescription);
+        }
+        throw new RuntimeException("Prescription not found with id: " + id);
+    }
+
     public void deletePrescription(UUID id) {
         prescriptionRepository.deleteById(id);
     }

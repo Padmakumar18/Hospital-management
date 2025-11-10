@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { userAPI, appointmentAPI, prescriptionAPI } from "../../services/api";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import DepartmentManagement from "./components/admin/DepartmentManagement";
 
 const Admin = () => {
   const profile = useSelector((state) => state.profile.profile);
@@ -17,13 +19,11 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pendingUsers, setPendingUsers] = useState([]);
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
+  const loadAllData = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       const [usersRes, appointmentsRes, prescriptionsRes, pendingRes] =
         await Promise.all([
           userAPI.getAll(),
@@ -53,19 +53,31 @@ const Admin = () => {
       setPendingUsers(pendingData);
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Failed to load data", {
-        duration: 5000,
-        position: "top-center",
-      });
+      if (showLoading) {
+        toast.error("Failed to load data", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
       // Set empty arrays on error
       setUsers([]);
       setAppointments([]);
       setPrescriptions([]);
       setPendingUsers([]);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
+
+  // Initial load
+  useEffect(() => {
+    loadAllData(true);
+  }, []);
+
+  // Auto-refresh every 10 seconds without showing loading
+  useAutoRefresh(loadAllData, 10000, true);
 
   const getFilteredUsers = () => {
     let filtered = users;
@@ -259,6 +271,7 @@ const Admin = () => {
               badge: pendingUsers.length,
             },
             { id: "users", label: "User Management", icon: "👥" },
+            { id: "departments", label: "Departments", icon: "🏥" },
             { id: "appointments", label: "Appointments", icon: "📅" },
             { id: "prescriptions", label: "Prescriptions", icon: "💊" },
           ].map((tab) => (
@@ -839,6 +852,9 @@ const Admin = () => {
             )}
           </div>
         )}
+
+        {/* Departments Tab */}
+        {activeTab === "departments" && <DepartmentManagement />}
 
         {/* Prescriptions Tab */}
         {activeTab === "prescriptions" && (

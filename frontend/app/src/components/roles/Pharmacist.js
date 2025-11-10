@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { prescriptionAPI } from "../../services/api";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
 
 const Pharmacist = () => {
   const profile = useSelector((state) => state.profile.profile);
@@ -14,33 +15,39 @@ const Pharmacist = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadPrescriptions = async (showLoading = true) => {
+    try {
+      if (showLoading) {
+        setIsLoading(true);
+      }
+      const response = await prescriptionAPI.getAll();
+      console.log("Loaded prescriptions:", response.data);
+      setPrescriptions(response.data);
+    } catch (error) {
+      console.error("Error loading prescriptions:", error);
+      if (showLoading) {
+        toast.error("Failed to load prescriptions", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
+    } finally {
+      if (showLoading) {
+        setIsLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
-    loadPrescriptions();
+    loadPrescriptions(true);
   }, []);
 
   useEffect(() => {
     filterPrescriptions();
   }, [searchTerm, statusFilter, prescriptions]);
 
-  const loadPrescriptions = async () => {
-    try {
-      setIsLoading(true);
-      const response = await prescriptionAPI.getAll();
-      const prescriptionsWithStatus = response.data.map((p) => ({
-        ...p,
-        dispensedStatus: p.dispensedStatus || "Pending",
-      }));
-      setPrescriptions(prescriptionsWithStatus);
-    } catch (error) {
-      console.error("Error loading prescriptions:", error);
-      toast.error("Failed to load prescriptions", {
-        duration: 5000,
-        position: "top-center",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Auto-refresh every 10 seconds without showing loading
+  useAutoRefresh(loadPrescriptions, 10000, true);
 
   const filterPrescriptions = () => {
     let filtered = prescriptions;
@@ -66,25 +73,28 @@ const Pharmacist = () => {
     setShowDetailModal(true);
   };
 
-  const confirmDispense = () => {
-    const updatedPrescriptions = prescriptions.map((p) =>
-      p.id === selectedPrescription.id
-        ? {
-            ...p,
-            dispensedStatus: "Dispensed",
-            dispensedDate: new Date().toISOString(),
-          }
-        : p
-    );
-    setPrescriptions(updatedPrescriptions);
-    setShowDetailModal(false);
-    toast.success(
-      `Prescription dispensed for ${selectedPrescription.patientName}`,
-      {
+  const confirmDispense = async () => {
+    try {
+      const pharmacistName = profile?.name || "Pharmacist";
+      await prescriptionAPI.dispense(selectedPrescription.id, pharmacistName);
+
+      toast.success(
+        `Prescription dispensed for ${selectedPrescription.patientName}`,
+        {
+          duration: 5000,
+          position: "top-center",
+        }
+      );
+
+      setShowDetailModal(false);
+      await loadPrescriptions(false); // Reload without showing loading
+    } catch (error) {
+      console.error("Error dispensing prescription:", error);
+      toast.error("Failed to dispense prescription", {
         duration: 5000,
         position: "top-center",
-      }
-    );
+      });
+    }
   };
 
   const getStatus = (prescription) => {

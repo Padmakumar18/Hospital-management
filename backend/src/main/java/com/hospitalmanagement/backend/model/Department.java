@@ -20,9 +20,6 @@ public class Department {
     @Column(name = "description", length = 500)
     private String description;
 
-    @Column(name = "head")
-    private String head;
-
     @Column(name = "active")
     private boolean active = true;
 
@@ -49,14 +46,6 @@ public class Department {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getHead() {
-        return head;
-    }
-
-    public void setHead(String head) {
-        this.head = head;
     }
 
     public boolean isActive() {
