@@ -3,11 +3,14 @@ package com.hospitalmanagement.backend.service;
 import com.hospitalmanagement.backend.model.Department;
 import com.hospitalmanagement.backend.model.Doctor;
 import com.hospitalmanagement.backend.model.User;
+import com.hospitalmanagement.backend.repository.AppointmentRepository;
 import com.hospitalmanagement.backend.repository.DepartmentRepository;
 import com.hospitalmanagement.backend.repository.DoctorRepository;
+import com.hospitalmanagement.backend.repository.PrescriptionRepository;
 import com.hospitalmanagement.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,13 +22,18 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final DoctorRepository doctorRepository;
     private final DepartmentRepository departmentRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final PrescriptionRepository prescriptionRepository;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-            DoctorRepository doctorRepository, DepartmentRepository departmentRepository) {
+            DoctorRepository doctorRepository, DepartmentRepository departmentRepository,
+            AppointmentRepository appointmentRepository, PrescriptionRepository prescriptionRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.doctorRepository = doctorRepository;
         this.departmentRepository = departmentRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.prescriptionRepository = prescriptionRepository;
     }
 
     public User createUser(User user) {
@@ -107,12 +115,102 @@ public class UserService {
         throw new RuntimeException("User not found with email: " + email);
     }
 
+    @Transactional
     public void deleteUser(String email) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
+            String userName = user.getName();
+            String userRole = user.getRole();
+
+            System.out.println("Deleting user: " + email + " (Role: " + userRole + ")");
+
+            // Delete based on role
+            switch (userRole) {
+                case "Patient":
+                    deletePatientRecords(email, userName);
+                    break;
+                case "Doctor":
+                    deleteDoctorRecords(email, userName);
+                    break;
+                case "Pharmacist":
+                    // Pharmacists don't have appointments or prescriptions
+                    System.out.println("Deleting pharmacist user: " + email);
+                    break;
+                case "Admin":
+                    // Admins don't have appointments or prescriptions
+                    System.out.println("Deleting admin user: " + email);
+                    break;
+            }
+
+            // Finally, delete the user
             userRepository.delete(user);
+            System.out.println("✓ User deleted: " + email);
         } else {
             throw new RuntimeException("User not found with email: " + email);
+        }
+    }
+
+    private void deletePatientRecords(String patientEmail, String patientName) {
+        // Delete patient's appointments
+        var patientAppointments = appointmentRepository.findByPatientId(patientEmail);
+        if (patientAppointments.isEmpty()) {
+            patientAppointments = appointmentRepository.findAll().stream()
+                    .filter(apt -> patientName.equals(apt.getPatientName()))
+                    .collect(Collectors.toList());
+        }
+
+        if (!patientAppointments.isEmpty()) {
+            appointmentRepository.deleteAll(patientAppointments);
+            System.out
+                    .println("  ✓ Deleted " + patientAppointments.size() + " appointments for patient: " + patientName);
+        }
+
+        // Delete patient's prescriptions
+        var patientPrescriptions = prescriptionRepository.findByPatientId(patientEmail);
+        if (patientPrescriptions.isEmpty()) {
+            patientPrescriptions = prescriptionRepository.findByPatientName(patientName);
+        }
+
+        if (!patientPrescriptions.isEmpty()) {
+            prescriptionRepository.deleteAll(patientPrescriptions);
+            System.out.println(
+                    "  ✓ Deleted " + patientPrescriptions.size() + " prescriptions for patient: " + patientName);
+        }
+    }
+
+    private void deleteDoctorRecords(String doctorEmail, String doctorName) {
+        // Delete doctor's appointments
+        var doctorAppointments = appointmentRepository.findByDoctorId(doctorEmail);
+        if (doctorAppointments.isEmpty()) {
+            doctorAppointments = appointmentRepository.findAll().stream()
+                    .filter(apt -> doctorName.equals(apt.getDoctorName()))
+                    .collect(Collectors.toList());
+        }
+
+        if (!doctorAppointments.isEmpty()) {
+            appointmentRepository.deleteAll(doctorAppointments);
+            System.out.println("  ✓ Deleted " + doctorAppointments.size() + " appointments for doctor: " + doctorName);
+        }
+
+        // Delete doctor's prescriptions
+        var doctorPrescriptions = prescriptionRepository.findByDoctorId(doctorEmail);
+        if (doctorPrescriptions.isEmpty()) {
+            doctorPrescriptions = prescriptionRepository.findAll().stream()
+                    .filter(pres -> doctorName.equals(pres.getDoctorName()))
+                    .collect(Collectors.toList());
+        }
+
+        if (!doctorPrescriptions.isEmpty()) {
+            prescriptionRepository.deleteAll(doctorPrescriptions);
+            System.out
+                    .println("  ✓ Deleted " + doctorPrescriptions.size() + " prescriptions for doctor: " + doctorName);
+        }
+
+        // Delete doctor record from doctors table
+        Doctor doctor = doctorRepository.findByEmail(doctorEmail);
+        if (doctor != null) {
+            doctorRepository.delete(doctor);
+            System.out.println("  ✓ Deleted doctor record: " + doctorName);
         }
     }
 
