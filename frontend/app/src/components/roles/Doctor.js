@@ -7,6 +7,7 @@ import PatientCard from "./components/doctor/PatientCard";
 import PrescriptionForm from "./components/doctor/Prescription";
 import AgeDistribution from "./components/doctor/AgeDistribution";
 import Loading from "../Loading";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,14 +22,11 @@ const Doctor = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load appointments on component mount
-  useEffect(() => {
-    loadAppointments();
-  }, [profile]);
-
-  const loadAppointments = async () => {
+  const loadAppointments = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       // Get all appointments
       const response = await appointmentAPI.getAll();
 
@@ -45,14 +43,28 @@ const Doctor = () => {
       setAppointmentData(doctorAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments", {
-        duration: 5000,
-        position: "top-center",
-      });
+      if (showLoading) {
+        toast.error("Failed to load appointments", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
+
+  // Load appointments on component mount
+  useEffect(() => {
+    if (profile) {
+      loadAppointments(true);
+    }
+  }, [profile]);
+
+  // Auto-refresh every 15 seconds without showing loading
+  useAutoRefresh(loadAppointments, 15000, true, [profile]);
 
   const handleInputChange = (e) => {
     setFilter(e.target.value);
@@ -134,6 +146,9 @@ const Doctor = () => {
     console.log("Prescription data to save:", prescriptionData);
 
     try {
+      // Check if this is an edit (existing prescription)
+      const isEdit = selectedPatient?.existingPrescription?.id;
+
       // Prepare prescription data with doctor info
       const prescriptionToSave = {
         ...prescriptionData,
@@ -151,10 +166,37 @@ const Doctor = () => {
       };
 
       console.log("Sending prescription to backend:", prescriptionToSave);
+      console.log("Is Edit:", isEdit);
 
-      // Create prescription via API
-      const response = await prescriptionAPI.create(prescriptionToSave);
-      console.log("Prescription created successfully:", response.data);
+      let response;
+      if (isEdit) {
+        // Update existing prescription
+        response = await prescriptionAPI.update(
+          selectedPatient.existingPrescription.id,
+          prescriptionToSave
+        );
+        console.log("Prescription updated successfully:", response.data);
+
+        toast.success(
+          `Prescription updated successfully for ${prescriptionData.patientName}!`,
+          {
+            duration: 5000,
+            position: "top-center",
+          }
+        );
+      } else {
+        // Create new prescription
+        response = await prescriptionAPI.create(prescriptionToSave);
+        console.log("Prescription created successfully:", response.data);
+
+        toast.success(
+          `Prescription created successfully for ${prescriptionData.patientName}!`,
+          {
+            duration: 5000,
+            position: "top-center",
+          }
+        );
+      }
 
       // Update appointment: mark as completed and prescription given
       const updatedAppointment = {
@@ -166,14 +208,6 @@ const Doctor = () => {
       };
 
       await appointmentAPI.update(selectedPatient.id, updatedAppointment);
-
-      toast.success(
-        `Prescription created successfully for ${prescriptionData.patientName}!`,
-        {
-          duration: 5000,
-          position: "top-center",
-        }
-      );
 
       // Reload appointments to get updated data
       await loadAppointments();

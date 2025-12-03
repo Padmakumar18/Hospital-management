@@ -1,12 +1,14 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api";
+// Use environment variable or fallback to localhost
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Appointment APIs
@@ -37,6 +39,10 @@ export const prescriptionAPI = {
     api.get(`/prescriptions/patient-name/${patientName}`),
   update: (id, prescriptionData) =>
     api.put(`/prescriptions/${id}`, prescriptionData),
+  dispense: (id, pharmacistName) =>
+    api.patch(`/prescriptions/${id}/dispense`, null, {
+      params: { pharmacistName },
+    }),
   delete: (id) => api.delete(`/prescriptions/${id}`),
 };
 
@@ -47,6 +53,9 @@ export const userAPI = {
   getByRole: (role) => api.get(`/users/role/${role}`),
   update: (email, userData) => api.put(`/users/${email}`, userData),
   delete: (email) => api.delete(`/users/${email}`),
+  getPendingVerification: () => api.get("/users/pending-verification"),
+  verifyUser: (email) => api.patch(`/users/${email}/verify`),
+  rejectUser: (email) => api.patch(`/users/${email}/reject`),
 };
 
 // Doctor APIs

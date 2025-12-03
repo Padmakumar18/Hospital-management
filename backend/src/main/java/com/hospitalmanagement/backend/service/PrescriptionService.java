@@ -61,6 +61,10 @@ public class PrescriptionService {
             existingPrescription.setAdditionalNotes(prescriptionDetails.getAdditionalNotes());
             existingPrescription.setFollowUpDate(prescriptionDetails.getFollowUpDate());
 
+            // Mark as edited
+            existingPrescription.setEdited(true);
+            existingPrescription.setLastEditedDate(LocalDate.now());
+
             // Update medicines
             existingPrescription.getMedicines().clear();
             if (prescriptionDetails.getMedicines() != null) {
@@ -70,6 +74,18 @@ public class PrescriptionService {
                 }
             }
 
+            return prescriptionRepository.save(existingPrescription);
+        }
+        throw new RuntimeException("Prescription not found with id: " + id);
+    }
+
+    public PrescriptionEntity dispensePrescription(UUID id, String pharmacistName) {
+        Optional<PrescriptionEntity> prescription = prescriptionRepository.findById(id);
+        if (prescription.isPresent()) {
+            PrescriptionEntity existingPrescription = prescription.get();
+            existingPrescription.setDispensedStatus("Dispensed");
+            existingPrescription.setDispensedDate(LocalDate.now());
+            existingPrescription.setDispensedBy(pharmacistName);
             return prescriptionRepository.save(existingPrescription);
         }
         throw new RuntimeException("Prescription not found with id: " + id);

@@ -43,7 +43,6 @@ public class DepartmentService {
             Department existingDepartment = department.get();
             existingDepartment.setName(departmentDetails.getName());
             existingDepartment.setDescription(departmentDetails.getDescription());
-            existingDepartment.setHead(departmentDetails.getHead());
             existingDepartment.setActive(departmentDetails.isActive());
             return departmentRepository.save(existingDepartment);
         }

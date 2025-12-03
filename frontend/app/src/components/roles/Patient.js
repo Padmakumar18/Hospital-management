@@ -6,6 +6,7 @@ import { appointmentAPI, prescriptionAPI } from "../../services/api";
 import AppointmentBookingForm from "./components/patient/AppointmentBookingForm";
 import PrescriptionView from "./components/patient/PrescriptionView";
 import Loading, { LoadingOverlay, SearchLoading, useLoading } from "../Loading";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
 import "./styles/Patient.css";
 
 const Patient = () => {
@@ -21,15 +22,11 @@ const Patient = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { loading: prescriptionLoading, withLoading } = useLoading();
 
-  useEffect(() => {
-    if (profile) {
-      loadAppointments();
-    }
-  }, [profile]);
-
-  const loadAppointments = async () => {
+  const loadAppointments = async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       // Get all appointments (can filter by patient email/ID later)
       const response = await appointmentAPI.getAll();
       const patientAppointments = response.data.filter(
@@ -40,14 +37,27 @@ const Patient = () => {
       calculateStats(patientAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments", {
-        duration: 5000,
-        position: "top-center",
-      });
+      if (showLoading) {
+        toast.error("Failed to load appointments", {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
+
+  useEffect(() => {
+    if (profile) {
+      loadAppointments(true);
+    }
+  }, [profile]);
+
+  // Auto-refresh every 15 seconds without showing loading
+  useAutoRefresh(loadAppointments, 15000, true, [profile]);
 
   const calculateStats = (appointments) => {
     const stats = {

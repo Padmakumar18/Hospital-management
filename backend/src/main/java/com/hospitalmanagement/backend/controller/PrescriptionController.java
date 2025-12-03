@@ -77,6 +77,18 @@ public class PrescriptionController {
         }
     }
 
+    @PatchMapping("/{id}/dispense")
+    public ResponseEntity<PrescriptionEntity> dispensePrescription(
+            @PathVariable UUID id,
+            @RequestParam String pharmacistName) {
+        try {
+            PrescriptionEntity dispensed = prescriptionService.dispensePrescription(id, pharmacistName);
+            return ResponseEntity.ok(dispensed);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePrescription(@PathVariable UUID id) {
         try {

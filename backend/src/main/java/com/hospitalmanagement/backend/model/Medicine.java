@@ -34,6 +34,7 @@ public class Medicine {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prescription_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private PrescriptionEntity prescription;
 
     // Getters and Setters

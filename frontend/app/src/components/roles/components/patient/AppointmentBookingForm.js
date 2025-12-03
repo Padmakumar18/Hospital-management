@@ -119,9 +119,8 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
 
     if (!formData.contact.trim()) {
       newErrors.contact = "Contact number is required";
-    } else if (!/^\+91\s\d{10}$/.test(formData.contact)) {
-      newErrors.contact =
-        "Please enter a valid Indian phone number (+91 XXXXXXXXXX)";
+    } else if (!/^\d{10}$/.test(formData.contact)) {
+      newErrors.contact = "Please enter a valid 10-digit phone number";
     }
 
     if (!formData.department) {
@@ -175,27 +174,10 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
     }
   };
 
-  const formatPhoneNumber = (value) => {
-    const digits = value.replace(/\D/g, "");
-
-    if (digits.length <= 10) {
-      return digits;
-    }
-
-    if (digits.length === 10) {
-      return `+91 ${digits}`;
-    }
-
-    if (digits.length === 12 && digits.startsWith("91")) {
-      return `+91 ${digits.slice(2)}`;
-    }
-
-    return value;
-  };
-
   const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    handleInputChange("contact", formatted);
+    // Only allow digits, max 10 characters
+    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+    handleInputChange("contact", value);
   };
 
   return (
@@ -290,14 +272,14 @@ const AppointmentBookingForm = ({ onSubmit, onCancel }) => {
               Contact Number *
             </label>
             <input
-              type="text"
+              type="tel"
               value={formData.contact}
               onChange={handlePhoneChange}
               className={`w-full md:w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                 errors.contact ? "border-red-500" : "border-gray-300"
               }`}
-              placeholder="+91 XXXXXXXXXX"
-              maxLength="14"
+              placeholder="Enter 10-digit number"
+              maxLength="10"
             />
             {errors.contact && (
               <p className="text-red-500 text-xs mt-1">{errors.contact}</p>
