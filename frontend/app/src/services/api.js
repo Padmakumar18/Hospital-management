@@ -1,12 +1,14 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api";
+// Use environment variable or fallback to localhost
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Appointment APIs
